@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+
+parking_app/storage/
+*.sqlite
