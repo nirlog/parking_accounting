@@ -1,7 +1,7 @@
 from datetime import date
 import unittest
 
-from parking_app.services.payments_view_service import calculate_payments_summary, filter_payments_by_period
+from parking_app.services.payments_view_service import calculate_payments_summary, filter_payments, filter_payments_by_period
 
 
 class PaymentsViewServiceTests(unittest.TestCase):
@@ -25,6 +25,36 @@ class PaymentsViewServiceTests(unittest.TestCase):
         ]
         filtered = filter_payments_by_period(rows, date_from=date(2026, 5, 1), date_to=date(2026, 5, 31))
         self.assertEqual(len(filtered), 2)
+
+    def test_filter_payments_by_composite_filters(self) -> None:
+        rows = [
+            {
+                "fio": "Иванов Иван",
+                "state_number": "А123АА178",
+                "place_number": "101",
+                "accepted_by": "Колобков",
+                "status": "active",
+                "receipt_number": "483",
+            },
+            {
+                "fio": "Петров Пётр",
+                "state_number": "В555ВВ178",
+                "place_number": "102",
+                "accepted_by": "Сидоров",
+                "status": "cancelled",
+                "receipt_number": "777",
+            },
+        ]
+        filtered = filter_payments(
+            rows,
+            query="иванов",
+            place_number="101",
+            state_number="А123",
+            accepted_by="колоб",
+            status="active",
+        )
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0]["place_number"], "101")
 
 
 if __name__ == "__main__":
