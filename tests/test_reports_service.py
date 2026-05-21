@@ -3,6 +3,7 @@ import unittest
 
 from parking_app.services.reports_service import (
     build_places_occupancy_summary,
+    build_refund_report_items,
     build_overdue_items,
     build_payments_period_summary,
     calculate_overdue_days,
@@ -52,6 +53,32 @@ class ReportsServiceTests(unittest.TestCase):
         )
         self.assertEqual(summary.occupied_count, 2)
         self.assertEqual(summary.free_count, 1)
+
+    def test_build_refund_report_items(self) -> None:
+        items = build_refund_report_items(
+            [
+                {
+                    "card_number": "000001",
+                    "fio": "Иванов Иван",
+                    "state_number": "А123АА178",
+                    "place_number": "101",
+                    "closed_at": date(2026, 5, 21),
+                    "paid_until": date(2026, 5, 31),
+                    "refund_days": 10,
+                    "refund_amount_kopecks": 300000,
+                    "refund_note": "По заявлению",
+                },
+                {
+                    "card_number": "000002",
+                    "fio": "Петров Пётр",
+                    "closed_at": date(2026, 5, 21),
+                    "refund_amount_kopecks": 0,
+                },
+            ]
+        )
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].card_number, "000001")
+        self.assertEqual(items[0].refund_days, 10)
 
 
 if __name__ == "__main__":
