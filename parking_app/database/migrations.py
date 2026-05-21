@@ -9,7 +9,17 @@ def _table_columns(connection: Connection, table_name: str) -> set[str]:
     return {str(row["name"]) for row in rows}
 
 
+def _table_exists(connection: Connection, table_name: str) -> bool:
+    row = connection.execute(
+        text("SELECT 1 FROM sqlite_master WHERE type='table' AND name=:table_name"),
+        {"table_name": table_name},
+    ).first()
+    return row is not None
+
+
 def _add_column_if_missing(connection: Connection, table_name: str, column_name: str, ddl: str) -> None:
+    if not _table_exists(connection, table_name):
+        return
     if column_name in _table_columns(connection, table_name):
         return
     connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {ddl}"))
@@ -52,3 +62,26 @@ def apply_mvp_migrations(connection: Connection) -> None:
     _add_column_if_missing(connection, "payments", "note", "TEXT")
     _add_column_if_missing(connection, "payments", "created_at", "DATETIME")
     _add_column_if_missing(connection, "payments", "updated_at", "DATETIME")
+
+    # settings
+    _add_column_if_missing(connection, "settings", "updated_at", "DATETIME")
+
+    # active card uniqueness indexes
+    connection.execute(
+        text(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_parking_cards_active_place
+            ON parking_cards(place_id)
+            WHERE status = 'active'
+            """
+        )
+    )
+    connection.execute(
+        text(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_parking_cards_active_vehicle
+            ON parking_cards(vehicle_id)
+            WHERE status = 'active'
+            """
+        )
+    )

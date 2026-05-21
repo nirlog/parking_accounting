@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from parking_app.database.db import Base
@@ -56,6 +56,20 @@ class ParkingPlace(Base):
 
 class ParkingCard(Base):
     __tablename__ = "parking_cards"
+    __table_args__ = (
+        Index(
+            "ux_parking_cards_active_place",
+            "place_id",
+            unique=True,
+            sqlite_where=text("status = 'active'"),
+        ),
+        Index(
+            "ux_parking_cards_active_vehicle",
+            "vehicle_id",
+            unique=True,
+            sqlite_where=text("status = 'active'"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     card_number: Mapped[str] = mapped_column(String(64), unique=True)

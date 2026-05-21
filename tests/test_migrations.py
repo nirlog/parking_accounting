@@ -82,6 +82,7 @@ class MigrationsTests(unittest.TestCase):
                     """
                 )
             )
+            conn.execute(text("CREATE TABLE settings (key VARCHAR(128) PRIMARY KEY, value VARCHAR(512))"))
 
             apply_mvp_migrations(conn)
 
@@ -129,6 +130,9 @@ class MigrationsTests(unittest.TestCase):
                     payments_columns
                 )
             )
+
+            settings_columns = {row["name"] for row in conn.execute(text("PRAGMA table_info(settings)")).mappings().all()}
+            self.assertIn("updated_at", settings_columns)
 
     def test_apply_mvp_migrations_is_idempotent(self) -> None:
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)

@@ -7,6 +7,7 @@ from datetime import date
 SQLALCHEMY_AVAILABLE = find_spec("sqlalchemy") is not None
 
 if SQLALCHEMY_AVAILABLE:
+    from sqlalchemy.exc import IntegrityError
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session, sessionmaker
 
@@ -143,6 +144,36 @@ class CardsRepositoryTests(unittest.TestCase):
             self.assertTrue(card.closed_with_active_paid_period)
             self.assertEqual(card.refund_days, 10)
             self.assertEqual(card.refund_amount_kopecks, 300000)
+
+    def test_db_prevents_second_active_card_for_same_place(self) -> None:
+        with self.SessionLocal() as session:
+            _, vehicle, place = self._seed_base(session)
+            session.add(
+                ParkingCard(
+                    card_number="000100",
+                    paper_card_number=None,
+                    client_id=1,
+                    vehicle_id=vehicle.id,
+                    place_id=place.id,
+                    start_date=date(2026, 5, 21),
+                    status="active",
+                )
+            )
+            session.commit()
+
+            session.add(
+                ParkingCard(
+                    card_number="000101",
+                    paper_card_number=None,
+                    client_id=1,
+                    vehicle_id=vehicle.id,
+                    place_id=place.id,
+                    start_date=date(2026, 5, 22),
+                    status="active",
+                )
+            )
+            with self.assertRaises(IntegrityError):
+                session.commit()
 
 
 if __name__ == "__main__":
