@@ -11,6 +11,13 @@ class OverdueItem:
     overdue_days: int
 
 
+@dataclass(frozen=True)
+class PaymentsPeriodSummary:
+    active_count: int
+    cancelled_count: int
+    active_amount_kopecks: int
+
+
 def calculate_overdue_days(*, paid_until: date, today: date) -> int:
     """Return overdue days. If not overdue, returns 0."""
     if paid_until >= today:
@@ -40,3 +47,24 @@ def build_overdue_items(rows: list[dict], *, today: date) -> list[OverdueItem]:
             )
         )
     return result
+
+
+def build_payments_period_summary(rows: list[dict]) -> PaymentsPeriodSummary:
+    active_count = 0
+    cancelled_count = 0
+    active_amount_kopecks = 0
+
+    for row in rows:
+        status = str(row.get("status", "")).strip().lower()
+        amount_kopecks = int(row.get("amount_kopecks") or 0)
+        if status == "active":
+            active_count += 1
+            active_amount_kopecks += amount_kopecks
+        elif status == "cancelled":
+            cancelled_count += 1
+
+    return PaymentsPeriodSummary(
+        active_count=active_count,
+        cancelled_count=cancelled_count,
+        active_amount_kopecks=active_amount_kopecks,
+    )

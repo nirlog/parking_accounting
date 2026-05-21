@@ -1,7 +1,11 @@
 from datetime import date
 import unittest
 
-from parking_app.services.reports_service import build_overdue_items, calculate_overdue_days
+from parking_app.services.reports_service import (
+    build_overdue_items,
+    build_payments_period_summary,
+    calculate_overdue_days,
+)
 
 
 class ReportsServiceTests(unittest.TestCase):
@@ -21,6 +25,19 @@ class ReportsServiceTests(unittest.TestCase):
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0].card_id, 1)
         self.assertEqual(items[0].overdue_days, 1)
+
+    def test_build_payments_period_summary(self) -> None:
+        summary = build_payments_period_summary(
+            [
+                {"status": "active", "amount_kopecks": 800000},
+                {"status": "active", "amount_kopecks": 500000},
+                {"status": "cancelled", "amount_kopecks": 999999},
+                {"status": "active", "amount_kopecks": None},
+            ]
+        )
+        self.assertEqual(summary.active_count, 3)
+        self.assertEqual(summary.cancelled_count, 1)
+        self.assertEqual(summary.active_amount_kopecks, 1300000)
 
 
 if __name__ == "__main__":
