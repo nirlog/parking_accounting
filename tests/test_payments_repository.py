@@ -12,7 +12,7 @@ if SQLALCHEMY_AVAILABLE:
 
     from parking_app.database.db import Base
     from parking_app.database.models import Payment
-    from parking_app.repositories.payments_repository import has_overlap_with_active_periods
+    from parking_app.repositories.payments_repository import cancel_payment, create_payment, has_overlap_with_active_periods
 
 
 @unittest.skipUnless(SQLALCHEMY_AVAILABLE, "sqlalchemy is not installed")
@@ -110,6 +110,37 @@ class PaymentsRepositoryTests(unittest.TestCase):
 
             self.assertEqual(payment.cancel_reason, "Ошибка кассира")
             self.assertIsNotNone(payment.cancelled_at)
+
+    def test_create_payment_and_cancel_payment(self) -> None:
+        with self.SessionLocal() as session:
+            payment = create_payment(
+                session,
+                parking_card_id=1,
+                payment_date=date(2026, 5, 1),
+                period_from=date(2026, 5, 1),
+                period_to=date(2026, 5, 31),
+                amount_kopecks=800000,
+                receipt_number="483",
+                fiscal_number="ФД85",
+                accepted_by="Колобков",
+            )
+            session.commit()
+            self.assertEqual(payment.status, "active")
+            self.assertEqual(payment.receipt_number, "483")
+
+            cancelled_at = datetime(2026, 5, 21, 10, 0, tzinfo=UTC)
+            updated = cancel_payment(
+                session,
+                payment_id=payment.id,
+                cancel_reason="Ошибка кассира",
+                cancelled_at=cancelled_at,
+            )
+            session.commit()
+
+            self.assertIsNotNone(updated)
+            assert updated is not None
+            self.assertEqual(updated.status, "cancelled")
+            self.assertEqual(updated.cancel_reason, "Ошибка кассира")
 
 
 if __name__ == "__main__":
