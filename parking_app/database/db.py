@@ -1,3 +1,4 @@
+from pathlib import Path
 from sqlite3 import Connection as SQLiteConnection
 
 from sqlalchemy import create_engine, event
@@ -10,6 +11,8 @@ class Base(DeclarativeBase):
     pass
 
 
+# Ensure SQLite parent directory exists even if bootstrap() has not run yet.
+Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 engine = create_engine(f"sqlite:///{DB_PATH}", future=True)
 
 
