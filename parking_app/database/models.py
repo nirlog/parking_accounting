@@ -62,3 +62,11 @@ class Payment(Base):
     period_to: Mapped[date] = mapped_column(Date)
     amount_kopecks: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(16), default="active")
+
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    value: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
