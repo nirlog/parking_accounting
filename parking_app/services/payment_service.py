@@ -16,14 +16,7 @@ def calculate_payment_status(
     today: date,
     warning_days: int = 3,
 ) -> PaymentStatus:
-    """Return mutually exclusive payment status according to spec.
-
-    Rules:
-    - None paid_until => NO_PAYMENTS
-    - paid_until < today => OVERDUE
-    - today <= paid_until <= today + warning_days => EXPIRING_SOON
-    - paid_until > today + warning_days => PAID
-    """
+    """Return mutually exclusive payment status according to spec."""
     if paid_until is None:
         return PaymentStatus.NO_PAYMENTS
 
@@ -35,3 +28,14 @@ def calculate_payment_status(
         return PaymentStatus.EXPIRING_SOON
 
     return PaymentStatus.PAID
+
+
+def periods_overlap(
+    *,
+    new_period_from: date,
+    new_period_to: date,
+    existing_period_from: date,
+    existing_period_to: date,
+) -> bool:
+    """Check overlap by canonical rule from the technical specification."""
+    return new_period_from <= existing_period_to and new_period_to >= existing_period_from
