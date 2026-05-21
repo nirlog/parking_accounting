@@ -18,6 +18,12 @@ class PaymentsPeriodSummary:
     active_amount_kopecks: int
 
 
+@dataclass(frozen=True)
+class PlacesOccupancySummary:
+    occupied_count: int
+    free_count: int
+
+
 def calculate_overdue_days(*, paid_until: date, today: date) -> int:
     """Return overdue days. If not overdue, returns 0."""
     if paid_until >= today:
@@ -68,3 +74,15 @@ def build_payments_period_summary(rows: list[dict]) -> PaymentsPeriodSummary:
         cancelled_count=cancelled_count,
         active_amount_kopecks=active_amount_kopecks,
     )
+
+
+def build_places_occupancy_summary(rows: list[dict]) -> PlacesOccupancySummary:
+    occupied_count = 0
+    free_count = 0
+    for row in rows:
+        status = str(row.get("display_status", "")).strip().lower()
+        if status == "occupied":
+            occupied_count += 1
+        elif status == "free":
+            free_count += 1
+    return PlacesOccupancySummary(occupied_count=occupied_count, free_count=free_count)

@@ -2,6 +2,7 @@ from datetime import date
 import unittest
 
 from parking_app.services.reports_service import (
+    build_places_occupancy_summary,
     build_overdue_items,
     build_payments_period_summary,
     calculate_overdue_days,
@@ -38,6 +39,19 @@ class ReportsServiceTests(unittest.TestCase):
         self.assertEqual(summary.active_count, 3)
         self.assertEqual(summary.cancelled_count, 1)
         self.assertEqual(summary.active_amount_kopecks, 1300000)
+
+    def test_build_places_occupancy_summary(self) -> None:
+        summary = build_places_occupancy_summary(
+            [
+                {"display_status": "occupied"},
+                {"display_status": "occupied"},
+                {"display_status": "free"},
+                {"display_status": "repair"},
+                {"display_status": "reserved"},
+            ]
+        )
+        self.assertEqual(summary.occupied_count, 2)
+        self.assertEqual(summary.free_count, 1)
 
 
 if __name__ == "__main__":
