@@ -6,7 +6,6 @@ from decimal import Decimal
 from pathlib import Path
 
 
-
 @dataclass(frozen=True)
 class ExportColumn:
     key: str
@@ -16,6 +15,21 @@ class ExportColumn:
 def make_export_filename(report_name: str, now: datetime | None = None) -> str:
     ts = (now or datetime.now()).strftime("%Y-%m-%d_%H%M")
     return f"{report_name}_{ts}.xlsx"
+
+
+def ensure_unique_export_path(path: Path) -> Path:
+    """Return unique path by appending numeric suffix when needed."""
+    if not path.exists():
+        return path
+
+    stem = path.stem
+    suffix = path.suffix
+    counter = 1
+    while True:
+        candidate = path.with_name(f"{stem}_{counter}{suffix}")
+        if not candidate.exists():
+            return candidate
+        counter += 1
 
 
 def format_date_ddmmyyyy(value) -> str:
@@ -42,7 +56,7 @@ def export_rows_to_xlsx(
 ) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     filename = make_export_filename(report_name, now)
-    path = output_dir / filename
+    path = ensure_unique_export_path(output_dir / filename)
 
     from openpyxl import Workbook
 
