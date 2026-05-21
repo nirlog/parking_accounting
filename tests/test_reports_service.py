@@ -2,6 +2,7 @@ from datetime import date
 import unittest
 
 from parking_app.services.reports_service import (
+    build_free_places_report,
     build_places_occupancy_summary,
     build_refund_report_items,
     build_overdue_items,
@@ -79,6 +80,19 @@ class ReportsServiceTests(unittest.TestCase):
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0].card_number, "000001")
         self.assertEqual(items[0].refund_days, 10)
+
+    def test_build_free_places_report(self) -> None:
+        items = build_free_places_report(
+            [
+                {"place_number": "102", "display_status": "free", "note": "свободно"},
+                {"place_number": "101", "display_status": "free", "note": None},
+                {"place_number": "201", "display_status": "occupied", "note": "занято"},
+            ]
+        )
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0].place_number, "101")
+        self.assertEqual(items[0].note, "")
+        self.assertEqual(items[1].place_number, "102")
 
 
 if __name__ == "__main__":

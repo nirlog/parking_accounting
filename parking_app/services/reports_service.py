@@ -37,6 +37,12 @@ class RefundReportItem:
     refund_note: str
 
 
+@dataclass(frozen=True)
+class FreePlaceItem:
+    place_number: str
+    note: str
+
+
 def calculate_overdue_days(*, paid_until: date, today: date) -> int:
     """Return overdue days. If not overdue, returns 0."""
     if paid_until >= today:
@@ -123,3 +129,17 @@ def build_refund_report_items(rows: list[dict]) -> list[RefundReportItem]:
             )
         )
     return result
+
+
+def build_free_places_report(rows: list[dict]) -> list[FreePlaceItem]:
+    result: list[FreePlaceItem] = []
+    for row in rows:
+        if str(row.get("display_status", "")).strip().lower() != "free":
+            continue
+        result.append(
+            FreePlaceItem(
+                place_number=str(row.get("place_number", "") or ""),
+                note=str(row.get("note", "") or ""),
+            )
+        )
+    return sorted(result, key=lambda x: x.place_number)
