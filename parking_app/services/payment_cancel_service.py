@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True)
@@ -24,5 +24,5 @@ def build_cancel_payment_result(*, reason: str, now: datetime | None = None) -> 
     return CancelPaymentResult(
         status="cancelled",
         cancel_reason=normalized_reason,
-        cancelled_at=now or datetime.now(),
+        cancelled_at=now or datetime.now(UTC),
     )
