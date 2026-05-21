@@ -12,7 +12,7 @@ def map_payment_row_for_export(row: dict) -> dict:
         "amount": format_amount_rub(row.get("amount_kopecks")),
         "fio": row.get("fio", ""),
         "state_number": row.get("state_number", ""),
-        "place": row.get("place", ""),
+        "place": row.get("place", row.get("place_number", "")),
         "receipt_number": row.get("receipt_number", ""),
         "fiscal_number": row.get("fiscal_number", ""),
         "accepted_by": row.get("accepted_by", ""),

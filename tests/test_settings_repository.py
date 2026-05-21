@@ -31,6 +31,11 @@ class SettingsRepositoryTests(unittest.TestCase):
             session.commit()
             self.assertEqual(get_setting_value(session, "payment_warning_days"), "7")
 
+    def test_set_setting_value_flushes_for_same_session_read(self) -> None:
+        with self.SessionLocal() as session:
+            set_setting_value(session, "payment_warning_days", "10")
+            self.assertEqual(get_setting_value(session, "payment_warning_days"), "10")
+
 
 if __name__ == "__main__":
     unittest.main()

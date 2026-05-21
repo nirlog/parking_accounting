@@ -30,6 +30,10 @@ class ExportAdaptersServiceTests(unittest.TestCase):
         self.assertEqual(mapped[0]["amount"], "1.00")
         self.assertEqual(mapped[1]["amount"], "2.00")
 
+    def test_map_place_from_place_number_fallback(self) -> None:
+        mapped = map_payment_row_for_export({"place_number": "147"})
+        self.assertEqual(mapped["place"], "147")
+
 
 if __name__ == "__main__":
     unittest.main()

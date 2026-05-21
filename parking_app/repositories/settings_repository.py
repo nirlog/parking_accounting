@@ -17,3 +17,4 @@ def set_setting_value(session: Session, key: str, value: str | None) -> None:
         session.add(Setting(key=key, value=value))
     else:
         setting.value = value
+    session.flush()

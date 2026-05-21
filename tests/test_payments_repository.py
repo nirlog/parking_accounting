@@ -142,6 +142,52 @@ class PaymentsRepositoryTests(unittest.TestCase):
             self.assertEqual(updated.status, "cancelled")
             self.assertEqual(updated.cancel_reason, "Ошибка кассира")
 
+    def test_create_payment_rejects_overlap(self) -> None:
+        with self.SessionLocal() as session:
+            create_payment(
+                session,
+                parking_card_id=1,
+                payment_date=date(2026, 5, 1),
+                period_from=date(2026, 5, 1),
+                period_to=date(2026, 5, 31),
+                amount_kopecks=800000,
+            )
+            session.commit()
+
+            with self.assertRaises(ValueError):
+                create_payment(
+                    session,
+                    parking_card_id=1,
+                    payment_date=date(2026, 5, 2),
+                    period_from=date(2026, 5, 15),
+                    period_to=date(2026, 6, 1),
+                    amount_kopecks=500000,
+                )
+
+    def test_cancel_payment_does_not_overwrite_existing_cancellation(self) -> None:
+        with self.SessionLocal() as session:
+            first_time = datetime(2026, 5, 21, 10, 0, tzinfo=UTC)
+            second_time = datetime(2026, 5, 21, 11, 0, tzinfo=UTC)
+            payment = create_payment(
+                session,
+                parking_card_id=1,
+                payment_date=date(2026, 5, 1),
+                period_from=date(2026, 5, 1),
+                period_to=date(2026, 5, 31),
+                amount_kopecks=800000,
+            )
+            cancel_payment(session, payment_id=payment.id, cancel_reason="Первичная ошибка", cancelled_at=first_time)
+            session.commit()
+
+            cancel_payment(session, payment_id=payment.id, cancel_reason="Повторная причина", cancelled_at=second_time)
+            session.commit()
+            session.refresh(payment)
+
+            self.assertEqual(payment.cancel_reason, "Первичная ошибка")
+            self.assertIsNotNone(payment.cancelled_at)
+            assert payment.cancelled_at is not None
+            self.assertEqual(payment.cancelled_at.replace(tzinfo=UTC), first_time)
+
 
 if __name__ == "__main__":
     unittest.main()

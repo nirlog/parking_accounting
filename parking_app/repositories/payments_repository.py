@@ -51,6 +51,14 @@ def create_payment(
     accepted_by: str | None = None,
     note: str | None = None,
 ) -> Payment:
+    if has_overlap_with_active_periods(
+        session,
+        parking_card_id=parking_card_id,
+        period_from=period_from,
+        period_to=period_to,
+    ):
+        raise ValueError("PAYMENT_PERIOD_OVERLAP")
+
     payment = Payment(
         parking_card_id=parking_card_id,
         payment_date=payment_date,
@@ -78,6 +86,8 @@ def cancel_payment(
     payment = session.get(Payment, payment_id)
     if payment is None:
         return None
+    if payment.status != "active":
+        return payment
     payment.status = "cancelled"
     payment.cancel_reason = cancel_reason
     payment.cancelled_at = cancelled_at
