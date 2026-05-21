@@ -62,10 +62,7 @@ class MigrationsTests(unittest.TestCase):
                         place_id INTEGER,
                         start_date DATE,
                         closed_at DATE,
-                        status VARCHAR(16),
-                        closed_with_active_paid_period BOOLEAN,
-                        refund_days INTEGER,
-                        refund_amount_kopecks INTEGER
+                        status VARCHAR(16)
                     )
                     """
                 )
@@ -80,9 +77,7 @@ class MigrationsTests(unittest.TestCase):
                         period_from DATE,
                         period_to DATE,
                         amount_kopecks INTEGER,
-                        status VARCHAR(16),
-                        cancel_reason TEXT,
-                        cancelled_at DATETIME
+                        status VARCHAR(16)
                     )
                     """
                 )
@@ -106,11 +101,31 @@ class MigrationsTests(unittest.TestCase):
             cards_columns = {
                 row["name"] for row in conn.execute(text("PRAGMA table_info(parking_cards)")).mappings().all()
             }
-            self.assertTrue({"attendant_name", "note", "refund_note", "created_at", "updated_at"}.issubset(cards_columns))
+            self.assertTrue(
+                {
+                    "closed_with_active_paid_period",
+                    "refund_days",
+                    "refund_amount_kopecks",
+                    "attendant_name",
+                    "note",
+                    "refund_note",
+                    "created_at",
+                    "updated_at",
+                }.issubset(cards_columns)
+            )
 
             payments_columns = {row["name"] for row in conn.execute(text("PRAGMA table_info(payments)")).mappings().all()}
             self.assertTrue(
-                {"receipt_number", "fiscal_number", "accepted_by", "note", "created_at", "updated_at"}.issubset(
+                {
+                    "cancel_reason",
+                    "cancelled_at",
+                    "receipt_number",
+                    "fiscal_number",
+                    "accepted_by",
+                    "note",
+                    "created_at",
+                    "updated_at",
+                }.issubset(
                     payments_columns
                 )
             )

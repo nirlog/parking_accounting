@@ -34,6 +34,9 @@ def apply_mvp_migrations(connection: Connection) -> None:
     _add_column_if_missing(connection, "parking_places", "updated_at", "DATETIME")
 
     # parking_cards
+    _add_column_if_missing(connection, "parking_cards", "closed_with_active_paid_period", "BOOLEAN DEFAULT 0")
+    _add_column_if_missing(connection, "parking_cards", "refund_days", "INTEGER DEFAULT 0")
+    _add_column_if_missing(connection, "parking_cards", "refund_amount_kopecks", "INTEGER DEFAULT 0")
     _add_column_if_missing(connection, "parking_cards", "attendant_name", "VARCHAR(128)")
     _add_column_if_missing(connection, "parking_cards", "note", "TEXT")
     _add_column_if_missing(connection, "parking_cards", "refund_note", "TEXT")
@@ -41,6 +44,8 @@ def apply_mvp_migrations(connection: Connection) -> None:
     _add_column_if_missing(connection, "parking_cards", "updated_at", "DATETIME")
 
     # payments
+    _add_column_if_missing(connection, "payments", "cancel_reason", "TEXT")
+    _add_column_if_missing(connection, "payments", "cancelled_at", "DATETIME")
     _add_column_if_missing(connection, "payments", "receipt_number", "VARCHAR(64)")
     _add_column_if_missing(connection, "payments", "fiscal_number", "VARCHAR(128)")
     _add_column_if_missing(connection, "payments", "accepted_by", "VARCHAR(128)")
