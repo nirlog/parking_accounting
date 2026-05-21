@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from app.config import DB_PATH
+from parking_app.app.config import DB_PATH
 
 
 class Base(DeclarativeBase):

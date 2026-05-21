@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from database.db import Base
+from parking_app.database.db import Base
 
 
 class Client(Base):
@@ -47,8 +47,8 @@ class ParkingCard(Base):
     client_id: Mapped[int] = mapped_column(ForeignKey("clients.id"))
     vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"))
     place_id: Mapped[int] = mapped_column(ForeignKey("parking_places.id"))
-    start_date: Mapped[datetime.date] = mapped_column(Date)
-    closed_at: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    start_date: Mapped[date] = mapped_column(Date)
+    closed_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(16), default="active")
 
 
@@ -57,8 +57,8 @@ class Payment(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     parking_card_id: Mapped[int] = mapped_column(ForeignKey("parking_cards.id"))
-    payment_date: Mapped[datetime.date] = mapped_column(Date)
-    period_from: Mapped[datetime.date] = mapped_column(Date)
-    period_to: Mapped[datetime.date] = mapped_column(Date)
+    payment_date: Mapped[date] = mapped_column(Date)
+    period_from: Mapped[date] = mapped_column(Date)
+    period_to: Mapped[date] = mapped_column(Date)
     amount_kopecks: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(16), default="active")

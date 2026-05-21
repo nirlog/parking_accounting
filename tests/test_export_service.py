@@ -17,6 +17,7 @@ from parking_app.services.export_service import (
     format_amount_rub,
     format_date_ddmmyyyy,
     make_export_filename,
+    ensure_unique_export_path,
 )
 
 
@@ -32,6 +33,15 @@ class ExportServiceTests(unittest.TestCase):
     def test_format_amount(self) -> None:
         self.assertEqual(format_amount_rub(800000), "8000.00")
         self.assertEqual(format_amount_rub(None), "")
+
+
+    def test_ensure_unique_export_path(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            base = root / "payments_2026-05-21_0830.xlsx"
+            base.write_bytes(b"a")
+            unique = ensure_unique_export_path(base)
+            self.assertEqual(unique.name, "payments_2026-05-21_0830_1.xlsx")
 
     @unittest.skipUnless(OPENPYXL_AVAILABLE, "openpyxl is not installed")
     def test_export_with_empty_rows_writes_marker(self) -> None:

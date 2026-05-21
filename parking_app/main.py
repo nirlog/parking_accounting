@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from app.config import BACKUPS_DIR, DB_PATH, EXPORTS_DIR, ensure_directories
-from database.init_db import init_db
+from parking_app.app.config import BACKUPS_DIR, DB_PATH, EXPORTS_DIR, ensure_directories
+from parking_app.database.init_db import init_db
 
 
 def bootstrap() -> dict[str, str]:
