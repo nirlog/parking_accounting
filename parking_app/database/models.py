@@ -14,6 +14,10 @@ class Client(Base):
     name: Mapped[str] = mapped_column(String(128))
     patronymic: Mapped[str | None] = mapped_column(String(128), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    document_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    document_number: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    photo_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
@@ -29,6 +33,12 @@ class Vehicle(Base):
     brand: Mapped[str | None] = mapped_column(String(128), nullable=True)
     model: Mapped[str | None] = mapped_column(String(128), nullable=True)
     color: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    photo_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
 
 class ParkingPlace(Base):
@@ -38,6 +48,10 @@ class ParkingPlace(Base):
     place_number: Mapped[str] = mapped_column(String(32), unique=True)
     status: Mapped[str] = mapped_column(String(16), default="free")
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
 
 class ParkingCard(Base):
@@ -52,9 +66,16 @@ class ParkingCard(Base):
     start_date: Mapped[date] = mapped_column(Date)
     closed_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(16), default="active")
+    attendant_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
     closed_with_active_paid_period: Mapped[bool] = mapped_column(Boolean, default=False)
     refund_days: Mapped[int] = mapped_column(Integer, default=0)
     refund_amount_kopecks: Mapped[int] = mapped_column(Integer, default=0)
+    refund_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
 
 class Payment(Base):
@@ -66,9 +87,17 @@ class Payment(Base):
     period_from: Mapped[date] = mapped_column(Date)
     period_to: Mapped[date] = mapped_column(Date)
     amount_kopecks: Mapped[int] = mapped_column(Integer)
+    receipt_number: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    fiscal_number: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    accepted_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
     status: Mapped[str] = mapped_column(String(16), default="active")
     cancel_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
 
 class Setting(Base):
