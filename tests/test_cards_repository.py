@@ -120,6 +120,30 @@ class CardsRepositoryTests(unittest.TestCase):
 
             self.assertEqual(next_card_number(session), "000011")
 
+    def test_card_refund_fields_are_persisted(self) -> None:
+        with self.SessionLocal() as session:
+            _, vehicle, place = self._seed_base(session)
+            card = ParkingCard(
+                card_number="000020",
+                paper_card_number=None,
+                client_id=1,
+                vehicle_id=vehicle.id,
+                place_id=place.id,
+                start_date=date(2026, 5, 21),
+                closed_at=date(2026, 5, 25),
+                status="closed",
+                closed_with_active_paid_period=True,
+                refund_days=10,
+                refund_amount_kopecks=300000,
+            )
+            session.add(card)
+            session.commit()
+            session.refresh(card)
+
+            self.assertTrue(card.closed_with_active_paid_period)
+            self.assertEqual(card.refund_days, 10)
+            self.assertEqual(card.refund_amount_kopecks, 300000)
+
 
 if __name__ == "__main__":
     unittest.main()

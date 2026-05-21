@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from parking_app.database.db import Base
@@ -52,6 +52,9 @@ class ParkingCard(Base):
     start_date: Mapped[date] = mapped_column(Date)
     closed_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(16), default="active")
+    closed_with_active_paid_period: Mapped[bool] = mapped_column(Boolean, default=False)
+    refund_days: Mapped[int] = mapped_column(Integer, default=0)
+    refund_amount_kopecks: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Payment(Base):
@@ -64,6 +67,8 @@ class Payment(Base):
     period_to: Mapped[date] = mapped_column(Date)
     amount_kopecks: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(16), default="active")
+    cancel_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class Setting(Base):
