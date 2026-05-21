@@ -51,6 +51,24 @@ class CardSearchServiceTests(unittest.TestCase):
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0]["surname"], "Иванов")
 
+    def test_filter_cards_matches_unformatted_phone_when_row_has_separators(self) -> None:
+        rows = [
+            {"surname": "Иванов", "phone": "+7 921 443-15-83"},
+            {"surname": "Петров", "phone": "+7 921 000-00-00"},
+        ]
+        filtered = filter_cards_by_query(rows, "79214431583")
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0]["surname"], "Иванов")
+
+    def test_filter_cards_matches_normalized_plate_when_row_has_spaces(self) -> None:
+        rows = [
+            {"surname": "Иванов", "state_number": "А 123 АА 178"},
+            {"surname": "Петров", "state_number": "В 555 ВВ 178"},
+        ]
+        filtered = filter_cards_by_query(rows, "A123AA178")
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0]["surname"], "Иванов")
+
 
 if __name__ == "__main__":
     unittest.main()

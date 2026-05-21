@@ -8,12 +8,17 @@ def build_search_text(row: dict) -> str:
 
     Expected fields may include name/phone/state/place/card numbers.
     """
+    phone = str(row.get("phone", "") or "").strip()
+    state_number = str(row.get("state_number", "") or "").strip()
+
     parts = [
         row.get("surname", ""),
         row.get("name", ""),
         row.get("patronymic", ""),
-        row.get("phone", ""),
-        row.get("state_number", ""),
+        phone,
+        normalize_phone(phone),
+        state_number,
+        normalize_state_number(state_number),
         row.get("place_number", ""),
         row.get("card_number", ""),
         row.get("paper_card_number", ""),
