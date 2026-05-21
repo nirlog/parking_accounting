@@ -33,6 +33,24 @@ class CardSearchServiceTests(unittest.TestCase):
         rows = [{"surname": "Иванов"}, {"surname": "Петров"}]
         self.assertEqual(len(filter_cards_by_query(rows, "   ")), 2)
 
+    def test_filter_cards_by_formatted_phone_query(self) -> None:
+        rows = [
+            {"surname": "Иванов", "phone": "79214431583"},
+            {"surname": "Петров", "phone": "79210000000"},
+        ]
+        filtered = filter_cards_by_query(rows, "+7 921 443-15-83")
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0]["surname"], "Иванов")
+
+    def test_filter_cards_by_latin_plate_query(self) -> None:
+        rows = [
+            {"surname": "Иванов", "state_number": "А123АА178"},
+            {"surname": "Петров", "state_number": "В555ВВ178"},
+        ]
+        filtered = filter_cards_by_query(rows, "A123AA178")
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0]["surname"], "Иванов")
+
 
 if __name__ == "__main__":
     unittest.main()

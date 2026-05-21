@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Select, exists, func, select
+from sqlalchemy import Select, exists, select
 from sqlalchemy.orm import Session
 
 from parking_app.database.models import ParkingCard
@@ -29,6 +29,9 @@ def card_number_exists(session: Session, card_number: str) -> bool:
 
 
 def next_card_number(session: Session, width: int = 6) -> str:
-    max_id_stmt = select(func.max(ParkingCard.id))
-    next_id = (session.scalar(max_id_stmt) or 0) + 1
-    return str(next_id).zfill(width)
+    stmt = select(ParkingCard.card_number)
+    max_numeric_value = 0
+    for card_number in session.scalars(stmt):
+        if card_number and str(card_number).isdigit():
+            max_numeric_value = max(max_numeric_value, int(card_number))
+    return str(max_numeric_value + 1).zfill(width)

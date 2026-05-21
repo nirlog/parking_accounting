@@ -101,6 +101,25 @@ class CardsRepositoryTests(unittest.TestCase):
             self.assertTrue(card_number_exists(session, "000001"))
             self.assertEqual(next_card_number(session), "000002")
 
+    def test_next_card_number_uses_max_card_number_not_row_id(self) -> None:
+        with self.SessionLocal() as session:
+            _, vehicle, place = self._seed_base(session)
+            session.add(
+                ParkingCard(
+                    card_number="000010",
+                    paper_card_number=None,
+                    client_id=1,
+                    vehicle_id=vehicle.id,
+                    place_id=place.id,
+                    start_date=date(2026, 5, 21),
+                    closed_at=None,
+                    status="active",
+                )
+            )
+            session.commit()
+
+            self.assertEqual(next_card_number(session), "000011")
+
 
 if __name__ == "__main__":
     unittest.main()

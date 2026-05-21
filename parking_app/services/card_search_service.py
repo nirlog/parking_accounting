@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from parking_app.services.normalization_service import normalize_phone, normalize_state_number
+
 
 def build_search_text(row: dict) -> str:
     """Build normalized searchable blob for card row.
@@ -23,4 +25,13 @@ def filter_cards_by_query(rows: list[dict], query: str) -> list[dict]:
     q = query.strip().lower()
     if not q:
         return rows
-    return [row for row in rows if q in build_search_text(row)]
+
+    candidates = [q]
+    phone_q = normalize_phone(q)
+    if phone_q:
+        candidates.append(phone_q)
+    plate_q = normalize_state_number(q)
+    if plate_q:
+        candidates.append(plate_q.lower())
+
+    return [row for row in rows if any(candidate in build_search_text(row) for candidate in candidates)]

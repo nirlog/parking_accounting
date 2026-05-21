@@ -21,6 +21,10 @@ class PlaceViewServiceTests(unittest.TestCase):
         self.assertEqual(row.display_status, "occupied")
         self.assertEqual(row.payment_status, "Оплачено")
 
+    def test_build_place_view_row_handles_none_as_empty(self) -> None:
+        row = build_place_view_row({"place_number": "101", "note": None})
+        self.assertEqual(row.note, "")
+
 
 if __name__ == "__main__":
     unittest.main()

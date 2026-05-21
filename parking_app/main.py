@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+if __package__ in (None, ""):  # pragma: no cover - direct script execution fallback
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from parking_app.app.config import BACKUPS_DIR, DB_PATH, EXPORTS_DIR, ensure_directories
 from parking_app.database.init_db import init_db
 
