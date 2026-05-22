@@ -5,6 +5,7 @@ from datetime import date
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QDialog,
     QHBoxLayout,
     QLineEdit,
     QMessageBox,
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from parking_app.database.db import SessionLocal
+from parking_app.ui.card_form import CardFormDialog
 from parking_app.services.cards_table_service import (
     CardTableRow,
     build_card_table_rows,
@@ -69,7 +71,11 @@ class CardsTab(QWidget):
         root_layout.addWidget(self.table, stretch=1)
 
         actions_layout = QHBoxLayout()
-        for title in ["Добавить карточку", "Открыть карточку", "Добавить оплату", "Печать карточки", "Закрыть карточку"]:
+        self.add_card_button = QPushButton("Добавить карточку", self)
+        self.add_card_button.clicked.connect(self._open_add_card_dialog)
+        actions_layout.addWidget(self.add_card_button)
+
+        for title in ["Открыть карточку", "Добавить оплату", "Печать карточки", "Закрыть карточку"]:
             button = QPushButton(title, self)
             button.clicked.connect(self._show_placeholder_message)
             actions_layout.addWidget(button)
@@ -123,6 +129,11 @@ class CardsTab(QWidget):
                 item = QTableWidgetItem(value)
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 self.table.setItem(row_idx, col, item)
+
+    def _open_add_card_dialog(self) -> None:
+        dialog = CardFormDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.refresh_rows()
 
     def _show_placeholder_message(self) -> None:
         QMessageBox.information(self, "Информация", "Будет добавлено позже")
