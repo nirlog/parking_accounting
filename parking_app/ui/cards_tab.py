@@ -47,7 +47,7 @@ class CardsTab(QWidget):
         filters_layout = QHBoxLayout()
         self.filter_group = QButtonGroup(self)
         self.filter_group.setExclusive(True)
-        self.filter_names = ["Все активные", "Просроченные", "Оплата скоро закончится", "Нет оплат", "Архив"]
+        self.filter_names = ["Все активные", "Просроченные", "Оплата скоро закончится", "Нет оплат", "Закрытые", "Архив"]
         for idx, title in enumerate(self.filter_names):
             btn = QPushButton(title, self)
             btn.setCheckable(True)

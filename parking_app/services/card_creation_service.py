@@ -8,7 +8,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from parking_app.database.models import ParkingCard, ParkingPlace
-from parking_app.repositories.cards_repository import card_number_exists, has_active_card_for_place
+from parking_app.repositories.cards_repository import (
+    card_number_exists,
+    has_active_card_for_place,
+    has_active_card_for_state_number,
+)
 from parking_app.repositories.clients_repository import create_client
 from parking_app.repositories.places_repository import create_place
 from parking_app.repositories.vehicles_repository import create_vehicle
@@ -56,13 +60,15 @@ def create_card_with_related(session: Session, payload: CreateCardInput) -> Park
     if not card_number:
         raise ValueError("CARD_NUMBER_REQUIRED")
 
+    normalized_state_number = normalize_state_number(state_number_raw)
+
     place = session.scalar(select(ParkingPlace).where(ParkingPlace.place_number == place_number))
     if place is None:
         place = create_place(session, place_number=place_number, status="free")
 
     validation_error = validate_new_card_constraints(
         place_has_active_card=has_active_card_for_place(session, place.id),
-        vehicle_has_active_card=False,
+        vehicle_has_active_card=has_active_card_for_state_number(session, normalized_state_number),
         card_number_exists=card_number_exists(session, card_number),
     )
     if validation_error is not None:
@@ -81,7 +87,7 @@ def create_card_with_related(session: Session, payload: CreateCardInput) -> Park
     vehicle = create_vehicle(
         session,
         client_id=client.id,
-        state_number=normalize_state_number(state_number_raw),
+        state_number=normalized_state_number,
         brand=(payload.brand or "").strip() or None,
         model=(payload.model or "").strip() or None,
         color=(payload.color or "").strip() or None,

@@ -115,17 +115,21 @@ class CardsTableServiceTests(unittest.TestCase):
 
     def test_filter_and_search_functions(self) -> None:
         rows = [
-            CardTableRow(1, "101", "Иванов Иван", "А123АА178", "Lada Vesta", "+7 921 1112233", None, "Нет оплат", "active"),
-            CardTableRow(2, "205", "Петров Пётр", "В111ВВ178", "—", "—", date(2026, 5, 10), "Просрочено", "archived"),
+            CardTableRow(1, "000001", "147", "101", "Иванов Иван", "А123АА178", "Lada Vesta", "+7 921 1112233", None, "Нет оплат", "active"),
+            CardTableRow(2, "000002", None, "205", "Петров Пётр", "В111ВВ178", "—", "—", date(2026, 5, 10), "Просрочено", "closed"),
+            CardTableRow(3, "000003", None, "306", "Сидоров Сидор", "С222СС178", "—", "—", None, "Нет оплат", "archived"),
         ]
         self.assertEqual(len(filter_rows_by_quick_filter(rows, "Все активные")), 1)
+        self.assertEqual(len(filter_rows_by_quick_filter(rows, "Закрытые")), 1)
         self.assertEqual(len(filter_rows_by_quick_filter(rows, "Архив")), 1)
         self.assertEqual(len(filter_rows_by_search(rows, "иванов")), 1)
         self.assertEqual(len(filter_rows_by_search(rows, "79211112233")), 1)
         self.assertEqual(len(filter_rows_by_search(rows, "205")), 1)
+        self.assertEqual(len(filter_rows_by_search(rows, "0000")), 3)
+        self.assertEqual(len(filter_rows_by_search(rows, "147")), 1)
 
     def test_search_state_number_partial_and_normalized(self) -> None:
-        rows = [CardTableRow(1, "101", "Иванов Иван", "А123АА178", "Lada Vesta", "—", None, "Нет оплат", "active")]
+        rows = [CardTableRow(1, "000123", "147", "101", "Иванов Иван", "А123АА178", "Lada Vesta", "—", None, "Нет оплат", "active")]
         self.assertEqual(len(filter_rows_by_search(rows, "А123АА178")), 1)
         self.assertEqual(len(filter_rows_by_search(rows, "А123")), 1)
         self.assertEqual(len(filter_rows_by_search(rows, "A123")), 1)

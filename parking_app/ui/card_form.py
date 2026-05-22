@@ -137,6 +137,7 @@ class CardFormDialog(QDialog):
             "PLACE_NUMBER_REQUIRED": "Заполните номер места.",
             "CARD_NUMBER_REQUIRED": "Заполните номер карточки.",
             "PLACE_ALREADY_OCCUPIED": "Это место уже занято другой активной карточкой.",
+            "VEHICLE_ALREADY_ACTIVE": "У этого автомобиля уже есть активная карточка.",
             "CARD_NUMBER_ALREADY_EXISTS": "Карточка с таким номером уже существует.",
             "INTEGRITY_ERROR": "Не удалось сохранить карточку из-за ограничения базы данных.",
         }

@@ -76,7 +76,7 @@ class CardCreationServiceTests(unittest.TestCase):
             create_card_with_related(session, self._payload(card_number="000001", place_number="101"))
             session.commit()
             with self.assertRaisesRegex(ValueError, "CARD_NUMBER_ALREADY_EXISTS"):
-                create_card_with_related(session, self._payload(card_number="000001", place_number="102"))
+                create_card_with_related(session, self._payload(card_number="000001", place_number="102", state_number="В111ВВ178"))
 
     def test_occupied_place_error(self):
         with self.SessionLocal() as session:
@@ -94,6 +94,51 @@ class CardCreationServiceTests(unittest.TestCase):
             session.commit()
             after = session.scalar(select(func.count(ParkingPlace.id)))
             self.assertEqual(before, after)
+
+
+    def test_duplicate_active_vehicle_by_same_normalized_plate_error(self):
+        with self.SessionLocal() as session:
+            create_card_with_related(session, self._payload(card_number="000001", place_number="101", state_number="A123AA178"))
+            session.commit()
+
+            clients_before = session.scalar(select(func.count(Client.id)))
+            vehicles_before = session.scalar(select(func.count(Vehicle.id)))
+            cards_before = session.scalar(select(func.count(ParkingCard.id)))
+
+            with self.assertRaisesRegex(ValueError, "VEHICLE_ALREADY_ACTIVE"):
+                create_card_with_related(
+                    session,
+                    self._payload(card_number="000002", place_number="102", state_number="A 123 AA 178"),
+                )
+
+            clients_after = session.scalar(select(func.count(Client.id)))
+            vehicles_after = session.scalar(select(func.count(Vehicle.id)))
+            cards_after = session.scalar(select(func.count(ParkingCard.id)))
+            self.assertEqual(clients_before, clients_after)
+            self.assertEqual(vehicles_before, vehicles_after)
+            self.assertEqual(cards_before, cards_after)
+
+    def test_closed_card_allows_same_plate_again(self):
+        with self.SessionLocal() as session:
+            first = create_card_with_related(session, self._payload(card_number="000001", place_number="101", state_number="A123AA178"))
+            session.commit()
+            first.status = "closed"
+            session.commit()
+
+            second = create_card_with_related(session, self._payload(card_number="000002", place_number="102", state_number="А123АА178"))
+            session.commit()
+            self.assertEqual(second.status, "active")
+
+    def test_archived_card_allows_same_plate_again(self):
+        with self.SessionLocal() as session:
+            first = create_card_with_related(session, self._payload(card_number="000001", place_number="101", state_number="A123AA178"))
+            session.commit()
+            first.status = "archived"
+            session.commit()
+
+            second = create_card_with_related(session, self._payload(card_number="000002", place_number="102", state_number="А123АА178"))
+            session.commit()
+            self.assertEqual(second.status, "active")
 
 
 if __name__ == "__main__":

@@ -14,6 +14,8 @@ from parking_app.services.payment_service import calculate_payment_status
 @dataclass(frozen=True)
 class CardTableRow:
     card_id: int
+    card_number: str
+    paper_card_number: str | None
     place_number: str
     fio: str
     state_number: str
@@ -40,6 +42,8 @@ def build_card_table_rows(session: Session, *, today: date, warning_days: int = 
         select(
             ParkingCard.id,
             ParkingCard.status,
+            ParkingCard.card_number,
+            ParkingCard.paper_card_number,
             ParkingPlace.place_number,
             Client.surname,
             Client.name,
@@ -67,6 +71,8 @@ def build_card_table_rows(session: Session, *, today: date, warning_days: int = 
         rows.append(
             CardTableRow(
                 card_id=rec.id,
+                card_number=rec.card_number,
+                paper_card_number=rec.paper_card_number or None,
                 place_number=rec.place_number,
                 fio=fio,
                 state_number=rec.state_number,
@@ -99,6 +105,8 @@ def filter_rows_by_quick_filter(rows: list[CardTableRow], filter_name: str) -> l
         return [r for r in rows if r.payment_status == "Скоро закончится"]
     if filter_name == "Нет оплат":
         return [r for r in rows if r.payment_status == "Нет оплат"]
+    if filter_name == "Закрытые":
+        return [r for r in rows if r.card_status == "closed"]
     if filter_name == "Архив":
         return [r for r in rows if r.card_status == "archived"]
     return rows
@@ -119,7 +127,14 @@ def filter_rows_by_search(rows: list[CardTableRow], query: str) -> list[CardTabl
         place = row.place_number.lower()
         phone_digits = normalize_phone(row.phone)
         plate_normalized = normalize_state_number(row.state_number)
-        haystack = [fio, place, row.phone.lower(), row.state_number.lower()]
+        haystack = [
+            fio,
+            place,
+            row.phone.lower(),
+            row.state_number.lower(),
+            row.card_number.lower(),
+            (row.paper_card_number or "").lower(),
+        ]
 
         matched = q_lower in " ".join(haystack)
         if not matched and q_digits:
