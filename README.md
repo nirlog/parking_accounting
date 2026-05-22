@@ -1437,3 +1437,24 @@ A767AB178
 7. Архитектура должна позволять в будущем добавить печать, фото, импорт, роли пользователей и дополнительные отчёты.
 8. Финансовые записи не должны удаляться физически.
 9. Вся логика нормализации телефона и госномера должна быть вынесена в отдельный сервис, чтобы одинаково применяться при сохранении, поиске и проверках.
+
+## Быстрый запуск (Windows)
+
+Можно запускать из корня репозитория.
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r parking_app/requirements.txt
+python -m parking_app.main
+```
+
+Если вы хотите сначала перейти в папку приложения, это тоже допустимо:
+
+```powershell
+cd parking_app
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python -m parking_app.main
+```
