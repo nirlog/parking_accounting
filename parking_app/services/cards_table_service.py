@@ -81,7 +81,13 @@ def build_card_table_rows(session: Session, *, today: date, warning_days: int = 
     def status_rank(status: str) -> int:
         return 0 if status == "active" else 1
 
-    return sorted(rows, key=lambda r: (status_rank(r.card_status), r.place_number, r.card_id))
+    def place_sort_key(place_number: str) -> tuple[int, int | str]:
+        value = place_number.strip()
+        if value.isdigit():
+            return (0, int(value))
+        return (1, value)
+
+    return sorted(rows, key=lambda r: (status_rank(r.card_status), place_sort_key(r.place_number), r.card_id))
 
 
 def filter_rows_by_quick_filter(rows: list[CardTableRow], filter_name: str) -> list[CardTableRow]:
@@ -119,7 +125,7 @@ def filter_rows_by_search(rows: list[CardTableRow], query: str) -> list[CardTabl
         if not matched and q_digits:
             matched = q_digits in phone_digits
         if not matched and q_plate:
-            matched = q_plate == plate_normalized
+            matched = q_plate in plate_normalized
         if matched:
             result.append(row)
     return result

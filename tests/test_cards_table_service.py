@@ -27,17 +27,24 @@ class CardsTableServiceTests(unittest.TestCase):
         Base.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine, future=True)
 
-    def _create_card(self, session, *, place_number: str = "101", status: str = "active") -> ParkingCard:
+    def _create_card(
+        self,
+        session,
+        *,
+        place_number: str = "101",
+        status: str = "active",
+        state_number: str = "А123АА178",
+    ) -> ParkingCard:
         client = Client(surname="Иванов", name="Иван", patronymic="Иванович", phone="+7 (921) 111-22-33")
         session.add(client)
         session.flush()
-        vehicle = Vehicle(client_id=client.id, state_number="А123АА178", brand="Lada", model="Vesta")
+        vehicle = Vehicle(client_id=client.id, state_number=state_number, brand="Lada", model="Vesta")
         session.add(vehicle)
         place = ParkingPlace(place_number=place_number, status="busy")
         session.add(place)
         session.flush()
         card = ParkingCard(
-            card_number=f"C-{place_number}",
+            card_number=f"C-{place_number}-{state_number}",
             client_id=client.id,
             vehicle_id=vehicle.id,
             place_id=place.id,
@@ -115,8 +122,27 @@ class CardsTableServiceTests(unittest.TestCase):
         self.assertEqual(len(filter_rows_by_quick_filter(rows, "Архив")), 1)
         self.assertEqual(len(filter_rows_by_search(rows, "иванов")), 1)
         self.assertEqual(len(filter_rows_by_search(rows, "79211112233")), 1)
-        self.assertEqual(len(filter_rows_by_search(rows, "а123аа178")), 1)
         self.assertEqual(len(filter_rows_by_search(rows, "205")), 1)
+
+    def test_search_state_number_partial_and_normalized(self) -> None:
+        rows = [CardTableRow(1, "101", "Иванов Иван", "А123АА178", "Lada Vesta", "—", None, "Нет оплат", "active")]
+        self.assertEqual(len(filter_rows_by_search(rows, "А123АА178")), 1)
+        self.assertEqual(len(filter_rows_by_search(rows, "А123")), 1)
+        self.assertEqual(len(filter_rows_by_search(rows, "A123")), 1)
+        self.assertEqual(len(filter_rows_by_search(rows, "123")), 1)
+        self.assertEqual(len(filter_rows_by_search(rows, "178")), 1)
+        self.assertEqual(len(filter_rows_by_search(rows, "А 123-АА 178")), 1)
+
+    def test_natural_place_sort_order(self) -> None:
+        with self.SessionLocal() as session:
+            self._create_card(session, place_number="10")
+            self._create_card(session, place_number="2")
+            self._create_card(session, place_number="1")
+            self._create_card(session, place_number="100")
+            session.commit()
+
+            rows = build_card_table_rows(session, today=date(2026, 5, 21))
+            self.assertEqual([r.place_number for r in rows], ["1", "2", "10", "100"])
 
 
 if __name__ == "__main__":

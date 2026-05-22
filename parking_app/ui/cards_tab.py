@@ -98,7 +98,8 @@ class CardsTab(QWidget):
         self.table.setRowCount(0)
         if not rows:
             self.table.setRowCount(1)
-            values = ["—", "Карточек пока нет", "—", "—", "—", "—", "—", "—"]
+            empty_message = "Карточек пока нет" if not self._all_rows else "Нет карточек по выбранным условиям"
+            values = ["—", empty_message, "—", "—", "—", "—", "—", "—"]
             for col, value in enumerate(values):
                 item = QTableWidgetItem(value)
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
