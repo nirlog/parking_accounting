@@ -1449,6 +1449,12 @@ pip install -r parking_app/requirements.txt
 python -m parking_app.main
 ```
 
+Проверка только bootstrap без запуска GUI:
+
+```powershell
+python -m parking_app.main --bootstrap-only
+```
+
 Если вы хотите сначала перейти в папку приложения, это тоже допустимо:
 
 ```powershell
@@ -1456,5 +1462,5 @@ cd parking_app
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python -m parking_app.main
+python main.py
 ```

@@ -1,11 +1,20 @@
 from __future__ import annotations
 
+import importlib
 from importlib.util import find_spec
+import os
 import subprocess
 import sys
 import unittest
 
 SQLALCHEMY_AVAILABLE = find_spec("sqlalchemy") is not None
+
+PYSIDE6_AVAILABLE = False
+try:
+    importlib.import_module("PySide6.QtWidgets")
+    PYSIDE6_AVAILABLE = True
+except Exception:
+    PYSIDE6_AVAILABLE = False
 
 if SQLALCHEMY_AVAILABLE:
     from parking_app.main import bootstrap
@@ -19,9 +28,45 @@ class MainBootstrapTests(unittest.TestCase):
         self.assertIn("exports_dir", info)
         self.assertIn("backups_dir", info)
 
-    def test_main_script_runs_directly(self) -> None:
-        proc = subprocess.run([sys.executable, "parking_app/main.py"], capture_output=True, text=True, check=False)
+    def test_main_script_runs_bootstrap_only(self) -> None:
+        proc = subprocess.run(
+            [sys.executable, "parking_app/main.py", "--bootstrap-only"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
         self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("DB:", proc.stdout)
+        self.assertIn("Exports:", proc.stdout)
+        self.assertIn("Backups:", proc.stdout)
+
+
+@unittest.skipUnless(PYSIDE6_AVAILABLE, "PySide6 is not installed or unavailable")
+class MainWindowSmokeTests(unittest.TestCase):
+    def test_main_window_structure(self) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        qt_widgets = importlib.import_module("PySide6.QtWidgets")
+        QApplication = qt_widgets.QApplication
+        QTabWidget = qt_widgets.QTabWidget
+
+        from parking_app.ui.main_window import MainWindow
+
+        app = QApplication.instance() or QApplication([])
+
+        window = MainWindow()
+
+        self.assertEqual(window.windowTitle(), "Автостоянка — учёт")
+        self.assertGreaterEqual(window.minimumWidth(), 1200)
+        self.assertGreaterEqual(window.minimumHeight(), 720)
+
+        central = window.centralWidget()
+        self.assertIsNotNone(central)
+        self.assertIsInstance(central, QTabWidget)
+        assert isinstance(central, QTabWidget)
+
+        self.assertEqual(central.count(), 5)
+        expected_titles = ["Карточки", "Оплаты", "Места", "Отчёты", "Настройки"]
+        self.assertEqual([central.tabText(i) for i in range(central.count())], expected_titles)
 
 
 if __name__ == "__main__":
