@@ -104,6 +104,7 @@ class CardCreationServiceTests(unittest.TestCase):
             clients_before = session.scalar(select(func.count(Client.id)))
             vehicles_before = session.scalar(select(func.count(Vehicle.id)))
             cards_before = session.scalar(select(func.count(ParkingCard.id)))
+            places_before = session.scalar(select(func.count(ParkingPlace.id)))
 
             with self.assertRaisesRegex(ValueError, "VEHICLE_ALREADY_ACTIVE"):
                 create_card_with_related(
@@ -116,7 +117,9 @@ class CardCreationServiceTests(unittest.TestCase):
             cards_after = session.scalar(select(func.count(ParkingCard.id)))
             self.assertEqual(clients_before, clients_after)
             self.assertEqual(vehicles_before, vehicles_after)
+            places_after = session.scalar(select(func.count(ParkingPlace.id)))
             self.assertEqual(cards_before, cards_after)
+            self.assertEqual(places_before, places_after)
 
     def test_closed_card_allows_same_plate_again(self):
         with self.SessionLocal() as session:
@@ -139,6 +142,44 @@ class CardCreationServiceTests(unittest.TestCase):
             second = create_card_with_related(session, self._payload(card_number="000002", place_number="102", state_number="А123АА178"))
             session.commit()
             self.assertEqual(second.status, "active")
+
+
+    def test_duplicate_card_number_does_not_create_new_place(self):
+        with self.SessionLocal() as session:
+            create_card_with_related(session, self._payload(card_number="000001", place_number="101", state_number="A123AA178"))
+            session.commit()
+            places_before = session.scalar(select(func.count(ParkingPlace.id)))
+
+            with self.assertRaisesRegex(ValueError, "CARD_NUMBER_ALREADY_EXISTS"):
+                create_card_with_related(
+                    session,
+                    self._payload(card_number="000001", place_number="999", state_number="В111ВВ178"),
+                )
+
+            places_after = session.scalar(select(func.count(ParkingPlace.id)))
+            self.assertEqual(places_before, places_after)
+
+    def test_occupied_place_does_not_create_client_vehicle_card(self):
+        with self.SessionLocal() as session:
+            create_card_with_related(session, self._payload(card_number="000001", place_number="101", state_number="A123AA178"))
+            session.commit()
+
+            clients_before = session.scalar(select(func.count(Client.id)))
+            vehicles_before = session.scalar(select(func.count(Vehicle.id)))
+            cards_before = session.scalar(select(func.count(ParkingCard.id)))
+
+            with self.assertRaisesRegex(ValueError, "PLACE_ALREADY_OCCUPIED"):
+                create_card_with_related(
+                    session,
+                    self._payload(card_number="000002", place_number="101", state_number="В111ВВ178"),
+                )
+
+            clients_after = session.scalar(select(func.count(Client.id)))
+            vehicles_after = session.scalar(select(func.count(Vehicle.id)))
+            cards_after = session.scalar(select(func.count(ParkingCard.id)))
+            self.assertEqual(clients_before, clients_after)
+            self.assertEqual(vehicles_before, vehicles_after)
+            self.assertEqual(cards_before, cards_after)
 
 
 if __name__ == "__main__":

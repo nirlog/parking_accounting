@@ -63,16 +63,20 @@ def create_card_with_related(session: Session, payload: CreateCardInput) -> Park
     normalized_state_number = normalize_state_number(state_number_raw)
 
     place = session.scalar(select(ParkingPlace).where(ParkingPlace.place_number == place_number))
-    if place is None:
-        place = create_place(session, place_number=place_number, status="free")
+    place_has_active_card = has_active_card_for_place(session, place.id) if place is not None else False
+    vehicle_has_active_card = has_active_card_for_state_number(session, normalized_state_number)
+    number_exists = card_number_exists(session, card_number)
 
     validation_error = validate_new_card_constraints(
-        place_has_active_card=has_active_card_for_place(session, place.id),
-        vehicle_has_active_card=has_active_card_for_state_number(session, normalized_state_number),
-        card_number_exists=card_number_exists(session, card_number),
+        place_has_active_card=place_has_active_card,
+        vehicle_has_active_card=vehicle_has_active_card,
+        card_number_exists=number_exists,
     )
     if validation_error is not None:
         raise ValueError(validation_error.code)
+
+    if place is None:
+        place = create_place(session, place_number=place_number, status="free")
 
     client = create_client(
         session,

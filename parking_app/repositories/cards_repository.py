@@ -24,7 +24,6 @@ def has_active_card_for_vehicle(session: Session, vehicle_id: int) -> bool:
 
 
 
-
 def has_active_card_for_state_number(session: Session, state_number: str) -> bool:
     stmt = select(
         exists(
