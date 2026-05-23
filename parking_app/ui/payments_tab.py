@@ -171,6 +171,9 @@ class PaymentsTab(QWidget):
             )
         self._fill_table()
 
+    def refresh_rows(self) -> None:
+        self._refresh()
+
     def _fill_table(self) -> None:
         self.table.setRowCount(0)
         for i, row in enumerate(self._rows):

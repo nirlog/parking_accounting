@@ -28,10 +28,18 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.reports_tab, "Отчёты")
         self.tabs.addTab(self.settings_tab, "Настройки")
 
-        self.payments_tab.payments_changed.connect(self._refresh_payment_dependent_tabs)
+        self.cards_tab.cards_changed.connect(self._refresh_card_dependent_tabs)
+        self.cards_tab.payments_changed.connect(lambda: self._refresh_payment_dependent_tabs(refresh_payments=True))
+        self.payments_tab.payments_changed.connect(lambda: self._refresh_payment_dependent_tabs(refresh_payments=False))
 
         self.setCentralWidget(self.tabs)
 
-    def _refresh_payment_dependent_tabs(self) -> None:
+    def _refresh_payment_dependent_tabs(self, *, refresh_payments: bool = True) -> None:
         self.cards_tab.refresh_rows()
         self.places_tab.refresh_rows()
+        if refresh_payments:
+            self.payments_tab.refresh_rows()
+
+    def _refresh_card_dependent_tabs(self) -> None:
+        self.places_tab.refresh_rows()
+        self.payments_tab.refresh_rows()

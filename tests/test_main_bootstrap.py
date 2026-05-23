@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import unittest
+from unittest.mock import Mock
 
 SQLALCHEMY_AVAILABLE = find_spec("sqlalchemy") is not None
 
@@ -81,8 +82,34 @@ class MainWindowSmokeTests(unittest.TestCase):
         self.assertIsNotNone(window.cards_tab)
         self.assertIsNotNone(window.payments_tab)
         self.assertIsNotNone(window.places_tab)
+        self.assertTrue(hasattr(window.cards_tab, "cards_changed"))
+        self.assertTrue(hasattr(window.cards_tab, "payments_changed"))
         self.assertTrue(hasattr(window.payments_tab, "payments_changed"))
-        window._refresh_payment_dependent_tabs()
+        self.assertTrue(hasattr(window.payments_tab, "refresh_rows"))
+
+        window.cards_tab.refresh_rows = Mock()
+        window.payments_tab.refresh_rows = Mock()
+        window.places_tab.refresh_rows = Mock()
+
+        window._refresh_payment_dependent_tabs(refresh_payments=True)
+        window.cards_tab.refresh_rows.assert_called_once()
+        window.places_tab.refresh_rows.assert_called_once()
+        window.payments_tab.refresh_rows.assert_called_once()
+
+        window.cards_tab.refresh_rows.reset_mock()
+        window.places_tab.refresh_rows.reset_mock()
+        window.payments_tab.refresh_rows.reset_mock()
+
+        window._refresh_payment_dependent_tabs(refresh_payments=False)
+        window.cards_tab.refresh_rows.assert_called_once()
+        window.places_tab.refresh_rows.assert_called_once()
+        window.payments_tab.refresh_rows.assert_not_called()
+
+        window.places_tab.refresh_rows.reset_mock()
+        window.payments_tab.refresh_rows.reset_mock()
+        window._refresh_card_dependent_tabs()
+        window.places_tab.refresh_rows.assert_called_once()
+        window.payments_tab.refresh_rows.assert_called_once()
 
     def test_accessible_style_contains_table_contrast_rules(self) -> None:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")

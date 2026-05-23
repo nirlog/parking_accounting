@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QButtonGroup,
     QDialog,
@@ -30,6 +30,9 @@ from parking_app.services.cards_table_service import (
 
 
 class CardsTab(QWidget):
+    cards_changed = Signal()
+    payments_changed = Signal()
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._all_rows: list[CardTableRow] = []
@@ -151,6 +154,7 @@ class CardsTab(QWidget):
         dialog = CardFormDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.refresh_rows()
+            self.cards_changed.emit()
 
 
     def _open_card_details_dialog(self) -> None:
@@ -202,6 +206,7 @@ class CardsTab(QWidget):
             raise
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.refresh_rows()
+            self.payments_changed.emit()
 
     def _open_close_card_dialog(self) -> None:
         row_idx = self.table.currentRow()
@@ -230,6 +235,7 @@ class CardsTab(QWidget):
             raise
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.refresh_rows()
+            self.cards_changed.emit()
 
     def _show_placeholder_message(self) -> None:
         QMessageBox.information(self, "Информация", "Будет добавлено позже")
