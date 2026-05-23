@@ -26,6 +26,14 @@ class PaymentTableRow:
     note: str
 
 
+@dataclass(frozen=True)
+class PaymentFooterSummary:
+    total_rows: int
+    active_count: int
+    cancelled_count: int
+    active_amount_kopecks: int
+
+
 def _compact_join(parts: list[str | None]) -> str:
     return " ".join(part.strip() for part in parts if part and part.strip())
 
@@ -106,3 +114,14 @@ def format_amount_kopecks(amount_kopecks: int) -> str:
 
 def calculate_total_amount_kopecks(rows: list[PaymentTableRow]) -> int:
     return sum(r.amount_kopecks for r in rows if r.status == "active")
+
+
+def build_payment_footer_summary(rows: list[PaymentTableRow]) -> PaymentFooterSummary:
+    active_count = sum(1 for r in rows if r.status == "active")
+    cancelled_count = sum(1 for r in rows if r.status == "cancelled")
+    return PaymentFooterSummary(
+        total_rows=len(rows),
+        active_count=active_count,
+        cancelled_count=cancelled_count,
+        active_amount_kopecks=calculate_total_amount_kopecks(rows),
+    )

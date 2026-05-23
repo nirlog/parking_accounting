@@ -15,11 +15,23 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Автостоянка — учёт")
         self.setMinimumSize(1200, 720)
 
-        tabs = QTabWidget(self)
-        tabs.addTab(CardsTab(tabs), "Карточки")
-        tabs.addTab(PaymentsTab(tabs), "Оплаты")
-        tabs.addTab(PlacesTab(tabs), "Места")
-        tabs.addTab(ReportsTab(tabs), "Отчёты")
-        tabs.addTab(SettingsTab(tabs), "Настройки")
+        self.tabs = QTabWidget(self)
+        self.cards_tab = CardsTab(self.tabs)
+        self.payments_tab = PaymentsTab(self.tabs)
+        self.places_tab = PlacesTab(self.tabs)
+        self.reports_tab = ReportsTab(self.tabs)
+        self.settings_tab = SettingsTab(self.tabs)
 
-        self.setCentralWidget(tabs)
+        self.tabs.addTab(self.cards_tab, "Карточки")
+        self.tabs.addTab(self.payments_tab, "Оплаты")
+        self.tabs.addTab(self.places_tab, "Места")
+        self.tabs.addTab(self.reports_tab, "Отчёты")
+        self.tabs.addTab(self.settings_tab, "Настройки")
+
+        self.payments_tab.payments_changed.connect(self._refresh_payment_dependent_tabs)
+
+        self.setCentralWidget(self.tabs)
+
+    def _refresh_payment_dependent_tabs(self) -> None:
+        self.cards_tab.refresh_rows()
+        self.places_tab.refresh_rows()

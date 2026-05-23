@@ -14,6 +14,7 @@ if SQLALCHEMY_AVAILABLE:
     from parking_app.database.models import Client, ParkingCard, ParkingPlace, Payment, Vehicle
     from parking_app.services.payments_table_service import (
         build_payment_table_rows,
+        build_payment_footer_summary,
         calculate_total_amount_kopecks,
         format_amount_kopecks,
     )
@@ -117,6 +118,20 @@ class PaymentsTableServiceTests(unittest.TestCase):
             PaymentTableRow(2, date(2026, 5, 2), date(2026, 6, 1), date(2026, 6, 30), 500000, "A", "B", "C", "—", "—", "—", "cancelled", "—"),
         ]
         self.assertEqual(calculate_total_amount_kopecks(rows), 800000)
+
+    def test_build_payment_footer_summary_counts_active_and_cancelled_separately(self) -> None:
+        from parking_app.services.payments_table_service import PaymentTableRow
+
+        rows = [
+            PaymentTableRow(1, date(2026, 5, 1), date(2026, 5, 1), date(2026, 5, 31), 800000, "A", "B", "C", "—", "—", "—", "active", "—"),
+            PaymentTableRow(2, date(2026, 5, 2), date(2026, 6, 1), date(2026, 6, 30), 500000, "A", "B", "C", "—", "—", "—", "active", "—"),
+            PaymentTableRow(3, date(2026, 5, 3), date(2026, 7, 1), date(2026, 7, 31), 999999, "A", "B", "C", "—", "—", "—", "cancelled", "—"),
+        ]
+        summary = build_payment_footer_summary(rows)
+        self.assertEqual(summary.total_rows, 3)
+        self.assertEqual(summary.active_count, 2)
+        self.assertEqual(summary.cancelled_count, 1)
+        self.assertEqual(summary.active_amount_kopecks, 1300000)
 
     def test_format_amount(self) -> None:
         self.assertEqual(format_amount_kopecks(800000), "8 000.00")

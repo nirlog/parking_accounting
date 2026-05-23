@@ -3,7 +3,7 @@ from __future__ import annotations
 from calendar import monthrange
 from datetime import date
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QDateEdit,
@@ -24,14 +24,15 @@ from parking_app.services.export_service import export_rows_to_xlsx
 from parking_app.services.payments_export_service import build_payments_export_rows, payments_export_columns
 from parking_app.services.payments_table_service import (
     PaymentTableRow,
+    build_payment_footer_summary,
     build_payment_table_rows,
-    calculate_total_amount_kopecks,
     format_amount_kopecks,
 )
 from parking_app.ui.cancel_payment_dialog import CancelPaymentDialog
 
 
 class PaymentsTab(QWidget):
+    payments_changed = Signal()
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._rows: list[PaymentTableRow] = []
@@ -92,9 +93,13 @@ class PaymentsTab(QWidget):
         root.addWidget(self.table, stretch=1)
 
         totals = QHBoxLayout()
-        self.count_label = QLabel("Количество оплат: 0", self)
-        self.sum_label = QLabel("Сумма оплат: 0.00 руб.", self)
-        totals.addWidget(self.count_label)
+        self.total_rows_label = QLabel("Всего строк: 0", self)
+        self.active_count_label = QLabel("Активных оплат: 0", self)
+        self.cancelled_count_label = QLabel("Отменённых оплат: 0", self)
+        self.sum_label = QLabel("Сумма активных оплат: 0.00 руб.", self)
+        totals.addWidget(self.total_rows_label)
+        totals.addWidget(self.active_count_label)
+        totals.addWidget(self.cancelled_count_label)
         totals.addStretch()
         totals.addWidget(self.sum_label)
         root.addLayout(totals)
@@ -192,9 +197,11 @@ class PaymentsTab(QWidget):
                     item.setData(Qt.ItemDataRole.UserRole + 1, row.status)
                 self.table.setItem(i, col, item)
 
-        total = calculate_total_amount_kopecks(self._rows)
-        self.count_label.setText(f"Количество оплат: {len(self._rows)}")
-        self.sum_label.setText(f"Сумма оплат: {format_amount_kopecks(total)} руб.")
+        summary = build_payment_footer_summary(self._rows)
+        self.total_rows_label.setText(f"Всего строк: {summary.total_rows}")
+        self.active_count_label.setText(f"Активных оплат: {summary.active_count}")
+        self.cancelled_count_label.setText(f"Отменённых оплат: {summary.cancelled_count}")
+        self.sum_label.setText(f"Сумма активных оплат: {format_amount_kopecks(summary.active_amount_kopecks)} руб.")
 
 
     def _export_to_excel(self) -> None:
@@ -244,3 +251,4 @@ class PaymentsTab(QWidget):
             raise
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self._refresh()
+            self.payments_changed.emit()

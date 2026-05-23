@@ -69,6 +69,21 @@ class MainWindowSmokeTests(unittest.TestCase):
         expected_titles = ["Карточки", "Оплаты", "Места", "Отчёты", "Настройки"]
         self.assertEqual([central.tabText(i) for i in range(central.count())], expected_titles)
 
+
+    def test_main_window_keeps_tab_references_and_refresh_method(self) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        qt_widgets = importlib.import_module("PySide6.QtWidgets")
+        QApplication = qt_widgets.QApplication
+        _app = QApplication.instance() or QApplication([])
+        from parking_app.ui.main_window import MainWindow
+
+        window = MainWindow()
+        self.assertIsNotNone(window.cards_tab)
+        self.assertIsNotNone(window.payments_tab)
+        self.assertIsNotNone(window.places_tab)
+        self.assertTrue(hasattr(window.payments_tab, "payments_changed"))
+        window._refresh_payment_dependent_tabs()
+
     def test_accessible_style_contains_table_contrast_rules(self) -> None:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         qt_widgets = importlib.import_module("PySide6.QtWidgets")
