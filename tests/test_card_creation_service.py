@@ -3,11 +3,13 @@ from __future__ import annotations
 from datetime import date
 from importlib.util import find_spec
 import unittest
+from unittest.mock import Mock
 
 SQLALCHEMY_AVAILABLE = find_spec("sqlalchemy") is not None
 
 if SQLALCHEMY_AVAILABLE:
     from sqlalchemy import create_engine, func, select
+    from sqlalchemy.exc import IntegrityError
     from sqlalchemy.orm import sessionmaker
 
     from parking_app.database.db import Base
@@ -180,6 +182,30 @@ class CardCreationServiceTests(unittest.TestCase):
             self.assertEqual(clients_before, clients_after)
             self.assertEqual(vehicles_before, vehicles_after)
             self.assertEqual(cards_before, cards_after)
+
+
+    def test_integrity_error_does_not_call_session_rollback(self):
+        with self.SessionLocal() as session:
+            session.add(ParkingPlace(place_number="101", status="free"))
+            session.commit()
+
+            original_flush = session.flush
+            call_count = {"n": 0}
+
+            def flush_side_effect(*args, **kwargs):
+                call_count["n"] += 1
+                if any(obj.__class__.__name__ == "ParkingCard" for obj in session.new):
+                    raise IntegrityError("statement", {}, Exception("boom"))
+                return original_flush(*args, **kwargs)
+
+            session.flush = Mock(side_effect=flush_side_effect)
+            session.rollback = Mock(wraps=session.rollback)
+
+            with self.assertRaisesRegex(ValueError, "INTEGRITY_ERROR"):
+                create_card_with_related(session, self._payload(card_number="000010", place_number="101"))
+
+            session.rollback.assert_not_called()
+            session.rollback()
 
 
 if __name__ == "__main__":

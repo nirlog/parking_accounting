@@ -120,13 +120,18 @@ class CardFormDialog(QDialog):
             attendant_name=self.attendant_input.text(),
             card_note=self.card_note_input.toPlainText(),
         )
-        try:
-            with SessionLocal() as session:
+        with SessionLocal() as session:
+            try:
                 create_card_with_related(session, payload)
                 session.commit()
-        except ValueError as exc:
-            QMessageBox.warning(self, "Ошибка", self._error_text(str(exc)))
-            return
+            except ValueError as exc:
+                session.rollback()
+                QMessageBox.warning(self, "Ошибка", self._error_text(str(exc)))
+                return
+            except Exception:
+                session.rollback()
+                QMessageBox.warning(self, "Ошибка", "Неожиданная ошибка при сохранении карточки.")
+                return
         self.accept()
 
     def _error_text(self, code: str) -> str:

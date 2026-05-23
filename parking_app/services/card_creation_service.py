@@ -113,6 +113,6 @@ def create_card_with_related(session: Session, payload: CreateCardInput) -> Park
     try:
         session.flush()
     except IntegrityError as exc:
-        session.rollback()
+        # Service does not control transaction boundaries; caller decides rollback/commit.
         raise ValueError("INTEGRITY_ERROR") from exc
     return card
