@@ -7,7 +7,7 @@ from datetime import UTC, date, datetime
 SQLALCHEMY_AVAILABLE = find_spec("sqlalchemy") is not None
 
 if SQLALCHEMY_AVAILABLE:
-    from sqlalchemy import create_engine
+    from sqlalchemy import create_engine, func, select
     from sqlalchemy.orm import sessionmaker
 
     from parking_app.database.db import Base
@@ -139,6 +139,46 @@ class PaymentsRepositoryTests(unittest.TestCase):
                     period_from=date(2026, 5, 15),
                     period_to=date(2026, 6, 1),
                     amount_kopecks=500000,
+                )
+
+    def test_create_payment_rejects_invalid_period(self) -> None:
+        with self.SessionLocal() as session:
+            card = self._create_card(session, status="active")
+            with self.assertRaisesRegex(ValueError, "PAYMENT_PERIOD_INVALID"):
+                create_payment(
+                    session,
+                    parking_card_id=card.id,
+                    payment_date=date(2026, 6, 1),
+                    period_from=date(2026, 6, 1),
+                    period_to=date(2026, 5, 31),
+                    amount_kopecks=800000,
+                )
+            self.assertEqual(session.scalar(select(func.count()).select_from(Payment)), 0)
+
+    def test_create_payment_rejects_zero_amount(self) -> None:
+        with self.SessionLocal() as session:
+            card = self._create_card(session, status="active")
+            with self.assertRaisesRegex(ValueError, "PAYMENT_AMOUNT_MUST_BE_POSITIVE"):
+                create_payment(
+                    session,
+                    parking_card_id=card.id,
+                    payment_date=date(2026, 6, 1),
+                    period_from=date(2026, 6, 1),
+                    period_to=date(2026, 6, 30),
+                    amount_kopecks=0,
+                )
+
+    def test_create_payment_rejects_negative_amount(self) -> None:
+        with self.SessionLocal() as session:
+            card = self._create_card(session, status="active")
+            with self.assertRaisesRegex(ValueError, "PAYMENT_AMOUNT_MUST_BE_POSITIVE"):
+                create_payment(
+                    session,
+                    parking_card_id=card.id,
+                    payment_date=date(2026, 6, 1),
+                    period_from=date(2026, 6, 1),
+                    period_to=date(2026, 6, 30),
+                    amount_kopecks=-100,
                 )
 
 

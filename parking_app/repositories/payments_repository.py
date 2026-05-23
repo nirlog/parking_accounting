@@ -56,6 +56,10 @@ def create_payment(
         raise ValueError("PAYMENT_CARD_NOT_FOUND")
     if card.status != "active":
         raise ValueError("PAYMENT_CARD_NOT_ACTIVE")
+    if period_to < period_from:
+        raise ValueError("PAYMENT_PERIOD_INVALID")
+    if amount_kopecks <= 0:
+        raise ValueError("PAYMENT_AMOUNT_MUST_BE_POSITIVE")
 
     if has_overlap_with_active_periods(
         session,

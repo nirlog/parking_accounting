@@ -174,6 +174,10 @@ class PaymentFormDialog(QDialog):
                 session.rollback()
                 if str(exc) == "PAYMENT_PERIOD_OVERLAP":
                     QMessageBox.warning(self, "Ошибка", "Период оплаты пересекается с уже существующей оплатой.")
+                elif str(exc) == "PAYMENT_PERIOD_INVALID":
+                    QMessageBox.warning(self, "Ошибка", "Дата окончания периода не может быть раньше даты начала.")
+                elif str(exc) == "PAYMENT_AMOUNT_MUST_BE_POSITIVE":
+                    QMessageBox.warning(self, "Ошибка", "Сумма должна быть больше 0.")
                 elif str(exc) == "PAYMENT_CARD_NOT_ACTIVE":
                     QMessageBox.warning(self, "Ошибка", "Оплату можно добавить только к активной карточке.")
                 elif str(exc) == "PAYMENT_CARD_NOT_FOUND":

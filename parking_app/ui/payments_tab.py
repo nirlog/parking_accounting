@@ -30,6 +30,7 @@ class PaymentsTab(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._rows: list[PaymentTableRow] = []
+        self._date_filter_enabled = True
 
         root = QVBoxLayout(self)
 
@@ -107,6 +108,7 @@ class PaymentsTab(QWidget):
         today = date.today()
         self._set_qdate(self.date_from_edit, today)
         self._set_qdate(self.date_to_edit, today)
+        self._date_filter_enabled = True
         self._refresh()
 
     def _set_this_month(self) -> None:
@@ -115,19 +117,26 @@ class PaymentsTab(QWidget):
         last = date(today.year, today.month, monthrange(today.year, today.month)[1])
         self._set_qdate(self.date_from_edit, first)
         self._set_qdate(self.date_to_edit, last)
+        self._date_filter_enabled = True
         self._refresh()
 
     def _apply_selected_range(self) -> None:
+        self._date_filter_enabled = True
         self._refresh()
 
     def _reset_filters(self) -> None:
+        self._date_filter_enabled = False
         self.date_from_edit.clear()
         self.date_to_edit.clear()
-        self._refresh(no_dates=True)
+        self._refresh()
 
-    def _refresh(self, *_args, no_dates: bool = False) -> None:
-        date_from = None if no_dates else self.date_from_edit.date().toPython()
-        date_to = None if no_dates else self.date_to_edit.date().toPython()
+    def _refresh(self, *_args) -> None:
+        if self._date_filter_enabled:
+            date_from = self.date_from_edit.date().toPython()
+            date_to = self.date_to_edit.date().toPython()
+        else:
+            date_from = None
+            date_to = None
 
         if date_from is not None and date_to is not None and date_to < date_from:
             QMessageBox.warning(self, "Ошибка", "Дата окончания периода не может быть раньше даты начала.")

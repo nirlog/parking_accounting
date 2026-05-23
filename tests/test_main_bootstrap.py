@@ -84,6 +84,19 @@ class MainWindowSmokeTests(unittest.TestCase):
         self.assertIn("alternate-background-color", ss)
         self.assertIn("selection-background-color", ss)
 
+    def test_payments_tab_reset_keeps_all_dates_mode(self) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        qt_widgets = importlib.import_module("PySide6.QtWidgets")
+        QApplication = qt_widgets.QApplication
+        app = QApplication.instance() or QApplication([])
+        from parking_app.ui.payments_tab import PaymentsTab
+
+        tab = PaymentsTab()
+        tab._reset_filters()
+        self.assertFalse(tab._date_filter_enabled)
+        tab._refresh()
+        self.assertFalse(tab._date_filter_enabled)
+
 
 if __name__ == "__main__":
     unittest.main()
