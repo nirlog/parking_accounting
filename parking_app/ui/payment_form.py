@@ -33,7 +33,9 @@ class PaymentFormDialog(QDialog):
 
         info = self._load_card_info()
         if info is None:
-            raise ValueError("CARD_NOT_FOUND")
+            QMessageBox.warning(self, "Ошибка", "Карточка не найдена. Обновите список карточек.")
+            self.reject()
+            return
 
         root = QVBoxLayout(self)
 
@@ -88,12 +90,16 @@ class PaymentFormDialog(QDialog):
         self.save_button.clicked.connect(self._on_save)
         self.cancel_button.clicked.connect(self.reject)
 
-        with SessionLocal() as session:
-            period_from, period_to = get_next_payment_period(
-                session, parking_card_id=self.parking_card_id, card_start_date=info["start_date"]
-            )
-        self.period_from_edit.setDate(QDate(period_from.year, period_from.month, period_from.day))
-        self.period_to_edit.setDate(QDate(period_to.year, period_to.month, period_to.day))
+        if info["card_status"] != "active":
+            self.save_button.setEnabled(False)
+            QMessageBox.warning(self, "Ошибка", "Оплату можно добавить только к активной карточке.")
+        else:
+            with SessionLocal() as session:
+                period_from, period_to = get_next_payment_period(
+                    session, parking_card_id=self.parking_card_id, card_start_date=info["start_date"]
+                )
+            self.period_from_edit.setDate(QDate(period_from.year, period_from.month, period_from.day))
+            self.period_to_edit.setDate(QDate(period_to.year, period_to.month, period_to.day))
 
     def _load_card_info(self) -> dict | None:
         with SessionLocal() as session:
@@ -103,6 +109,7 @@ class PaymentFormDialog(QDialog):
             rec = session.execute(
                 select(
                     ParkingCard.start_date,
+                    ParkingCard.status,
                     ParkingPlace.place_number,
                     Client.surname,
                     Client.name,
@@ -127,6 +134,7 @@ class PaymentFormDialog(QDialog):
                 "state_number": rec.state_number,
                 "vehicle": vehicle,
                 "paid_until": paid_until,
+                "card_status": rec.status,
             }
 
     def _on_save(self) -> None:
@@ -168,6 +176,10 @@ class PaymentFormDialog(QDialog):
                 session.rollback()
                 if str(exc) == "PAYMENT_PERIOD_OVERLAP":
                     QMessageBox.warning(self, "Ошибка", "Период оплаты пересекается с уже существующей оплатой.")
+                elif str(exc) == "PAYMENT_CARD_NOT_ACTIVE":
+                    QMessageBox.warning(self, "Ошибка", "Оплату можно добавить только к активной карточке.")
+                elif str(exc) == "PAYMENT_CARD_NOT_FOUND":
+                    QMessageBox.warning(self, "Ошибка", "Карточка не найдена. Обновите список карточек.")
                 else:
                     QMessageBox.warning(self, "Ошибка", "Не удалось сохранить оплату.")
                 return

@@ -139,6 +139,7 @@ class CardsTab(QWidget):
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 if col == 0:
                     item.setData(Qt.ItemDataRole.UserRole, row.card_id)
+                    item.setData(Qt.ItemDataRole.UserRole + 1, row.card_status)
                 self.table.setItem(row_idx, col, item)
 
     def _open_add_card_dialog(self) -> None:
@@ -158,6 +159,10 @@ class CardsTab(QWidget):
         card_id = first_item.data(Qt.ItemDataRole.UserRole)
         if not isinstance(card_id, int):
             QMessageBox.warning(self, "Ошибка", "Выберите карточку для добавления оплаты.")
+            return
+        card_status = first_item.data(Qt.ItemDataRole.UserRole + 1)
+        if card_status != "active":
+            QMessageBox.warning(self, "Ошибка", "Оплату можно добавить только к активной карточке.")
             return
 
         dialog = PaymentFormDialog(card_id, self)

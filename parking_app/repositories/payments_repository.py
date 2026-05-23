@@ -5,7 +5,7 @@ from datetime import date, datetime
 from sqlalchemy import Select, exists, select
 from sqlalchemy.orm import Session
 
-from parking_app.database.models import Payment
+from parking_app.database.models import ParkingCard, Payment
 
 
 ACTIVE_PAYMENT_STATUSES = ("active",)
@@ -50,7 +50,13 @@ def create_payment(
     fiscal_number: str | None = None,
     accepted_by: str | None = None,
     note: str | None = None,
-) -> Payment:
+ ) -> Payment:
+    card = session.get(ParkingCard, parking_card_id)
+    if card is None:
+        raise ValueError("PAYMENT_CARD_NOT_FOUND")
+    if card.status != "active":
+        raise ValueError("PAYMENT_CARD_NOT_ACTIVE")
+
     if has_overlap_with_active_periods(
         session,
         parking_card_id=parking_card_id,
