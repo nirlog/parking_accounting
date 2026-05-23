@@ -69,6 +69,12 @@ class ParkingCard(Base):
             unique=True,
             sqlite_where=text("status = 'active'"),
         ),
+        Index(
+            "ux_parking_cards_active_state_number",
+            "vehicle_state_number",
+            unique=True,
+            sqlite_where=text("status = 'active' AND vehicle_state_number IS NOT NULL"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -80,6 +86,7 @@ class ParkingCard(Base):
     start_date: Mapped[date] = mapped_column(Date)
     closed_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(16), default="active")
+    vehicle_state_number: Mapped[str | None] = mapped_column(String(32), nullable=True)
     attendant_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     closed_with_active_paid_period: Mapped[bool] = mapped_column(Boolean, default=False)

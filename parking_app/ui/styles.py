@@ -30,23 +30,30 @@ def apply_large_accessible_style(app: QApplication) -> None:
 
         QTableView,
         QTableWidget {
-            gridline-color: #c8c8c8;
-            alternate-background-color: #f5f7fa;
+            background-color: #1f2937;
+            alternate-background-color: #273447;
+            color: #f9fafb;
+            gridline-color: #4b5563;
+            selection-background-color: #2d85b3;
+            selection-color: #ffffff;
+            border: 1px solid #4b5563;
             font-size: 12pt;
         }
 
         QTableView::item,
         QTableWidget::item {
             padding: 8px;
+            color: #f9fafb;
         }
 
         QHeaderView::section {
             min-height: 40px;
             padding: 8px;
             font-size: 12pt;
-            font-weight: 600;
-            background-color: #e9ecef;
-            border: 1px solid #d6d9dd;
+            font-weight: 700;
+            background-color: #111827;
+            color: #f9fafb;
+            border: 1px solid #4b5563;
         }
         """
     )

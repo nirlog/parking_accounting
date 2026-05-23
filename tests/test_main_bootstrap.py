@@ -50,6 +50,7 @@ class MainWindowSmokeTests(unittest.TestCase):
         QTabWidget = qt_widgets.QTabWidget
 
         from parking_app.ui.main_window import MainWindow
+        from parking_app.ui.styles import apply_large_accessible_style
 
         app = QApplication.instance() or QApplication([])
 
@@ -67,6 +68,19 @@ class MainWindowSmokeTests(unittest.TestCase):
         self.assertEqual(central.count(), 5)
         expected_titles = ["Карточки", "Оплаты", "Места", "Отчёты", "Настройки"]
         self.assertEqual([central.tabText(i) for i in range(central.count())], expected_titles)
+
+    def test_accessible_style_contains_table_contrast_rules(self) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        qt_widgets = importlib.import_module("PySide6.QtWidgets")
+        QApplication = qt_widgets.QApplication
+        from parking_app.ui.styles import apply_large_accessible_style
+
+        app = QApplication.instance() or QApplication([])
+        apply_large_accessible_style(app)
+        ss = app.styleSheet()
+        self.assertIn("selection-color", ss)
+        self.assertIn("QHeaderView::section", ss)
+        self.assertIn("QTableWidget", ss)
 
 
 if __name__ == "__main__":

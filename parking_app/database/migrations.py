@@ -52,6 +52,22 @@ def apply_mvp_migrations(connection: Connection) -> None:
     _add_column_if_missing(connection, "parking_cards", "refund_note", "TEXT")
     _add_column_if_missing(connection, "parking_cards", "created_at", "DATETIME")
     _add_column_if_missing(connection, "parking_cards", "updated_at", "DATETIME")
+    _add_column_if_missing(connection, "parking_cards", "vehicle_state_number", "VARCHAR(32)")
+
+    if _table_exists(connection, "parking_cards") and _table_exists(connection, "vehicles"):
+        connection.execute(
+            text(
+                """
+                UPDATE parking_cards
+                SET vehicle_state_number = (
+                    SELECT vehicles.state_number
+                    FROM vehicles
+                    WHERE vehicles.id = parking_cards.vehicle_id
+                )
+                WHERE vehicle_state_number IS NULL
+                """
+            )
+        )
 
     # payments
     _add_column_if_missing(connection, "payments", "cancel_reason", "TEXT")
@@ -82,6 +98,17 @@ def apply_mvp_migrations(connection: Connection) -> None:
             CREATE UNIQUE INDEX IF NOT EXISTS ux_parking_cards_active_vehicle
             ON parking_cards(vehicle_id)
             WHERE status = 'active'
+            """
+        )
+    )
+
+
+    connection.execute(
+        text(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_parking_cards_active_state_number
+            ON parking_cards(vehicle_state_number)
+            WHERE status = 'active' AND vehicle_state_number IS NOT NULL
             """
         )
     )

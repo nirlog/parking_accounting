@@ -106,6 +106,7 @@ def create_card_with_related(session: Session, payload: CreateCardInput) -> Park
         place_id=place.id,
         start_date=payload.start_date,
         status="active",
+        vehicle_state_number=normalized_state_number,
         attendant_name=(payload.attendant_name or "").strip() or None,
         note=(payload.card_note or "").strip() or None,
     )
@@ -114,5 +115,8 @@ def create_card_with_related(session: Session, payload: CreateCardInput) -> Park
         session.flush()
     except IntegrityError as exc:
         # Service does not control transaction boundaries; caller decides rollback/commit.
+        msg = str(exc).lower()
+        if "ux_parking_cards_active_state_number" in msg or "vehicle_state_number" in msg:
+            raise ValueError("VEHICLE_ALREADY_ACTIVE") from exc
         raise ValueError("INTEGRITY_ERROR") from exc
     return card

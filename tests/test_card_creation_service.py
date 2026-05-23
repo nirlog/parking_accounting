@@ -61,6 +61,7 @@ class CardCreationServiceTests(unittest.TestCase):
             assert loaded_client and loaded_vehicle
             self.assertEqual(loaded_client.phone, "79211112233")
             self.assertEqual(loaded_vehicle.state_number, "А123АА178")
+            self.assertEqual(card.vehicle_state_number, "А123АА178")
 
     def test_required_field_errors(self):
         with self.SessionLocal() as session:
