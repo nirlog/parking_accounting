@@ -165,7 +165,13 @@ class CardsTab(QWidget):
             QMessageBox.warning(self, "Ошибка", "Оплату можно добавить только к активной карточке.")
             return
 
-        dialog = PaymentFormDialog(card_id, self)
+        try:
+            dialog = PaymentFormDialog(card_id, self)
+        except ValueError as exc:
+            if str(exc) == "PAYMENT_CARD_NOT_FOUND":
+                QMessageBox.warning(self, "Ошибка", "Карточка не найдена. Обновите список карточек.")
+                return
+            raise
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.refresh_rows()
 

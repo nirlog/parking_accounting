@@ -50,7 +50,7 @@ def create_payment(
     fiscal_number: str | None = None,
     accepted_by: str | None = None,
     note: str | None = None,
- ) -> Payment:
+) -> Payment:
     card = session.get(ParkingCard, parking_card_id)
     if card is None:
         raise ValueError("PAYMENT_CARD_NOT_FOUND")

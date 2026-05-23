@@ -33,9 +33,7 @@ class PaymentFormDialog(QDialog):
 
         info = self._load_card_info()
         if info is None:
-            QMessageBox.warning(self, "Ошибка", "Карточка не найдена. Обновите список карточек.")
-            self.reject()
-            return
+            raise ValueError("PAYMENT_CARD_NOT_FOUND")
 
         root = QVBoxLayout(self)
 
