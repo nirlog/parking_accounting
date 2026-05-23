@@ -149,6 +149,24 @@ class CardsTableServiceTests(unittest.TestCase):
             rows = build_card_table_rows(session, today=date(2026, 5, 21))
             self.assertEqual([r.place_number for r in rows], ["1", "2", "10", "100"])
 
+    def test_quick_filters_only_include_active_for_payment_status_filters(self) -> None:
+        rows = [
+            CardTableRow(1, "000001", None, "101", "A", "А111АА178", "—", "—", None, "Просрочено", "closed"),
+            CardTableRow(2, "000002", None, "102", "B", "А222АА178", "—", "—", None, "Нет оплат", "archived"),
+            CardTableRow(3, "000003", None, "103", "C", "А333АА178", "—", "—", None, "Просрочено", "active"),
+            CardTableRow(4, "000004", None, "104", "D", "А444АА178", "—", "—", None, "Нет оплат", "active"),
+            CardTableRow(5, "000005", None, "105", "E", "А555АА178", "—", "—", None, "Скоро закончится", "active"),
+        ]
+
+        overdue = filter_rows_by_quick_filter(rows, "Просроченные")
+        self.assertEqual([r.card_id for r in overdue], [3])
+
+        no_payments = filter_rows_by_quick_filter(rows, "Нет оплат")
+        self.assertEqual([r.card_id for r in no_payments], [4])
+
+        expiring = filter_rows_by_quick_filter(rows, "Оплата скоро закончится")
+        self.assertEqual([r.card_id for r in expiring], [5])
+
 
 if __name__ == "__main__":
     unittest.main()

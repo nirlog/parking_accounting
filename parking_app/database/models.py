@@ -73,10 +73,10 @@ class ParkingCard(Base):
             "ux_parking_cards_active_state_number",
             "vehicle_state_number",
             unique=True,
-            sqlite_where=text("status = 'active' AND vehicle_state_number IS NOT NULL"),
+            sqlite_where=text("status = 'active' AND vehicle_state_number IS NOT NULL AND trim(vehicle_state_number) <> ''"),
         ),
         CheckConstraint(
-            "status != 'active' OR vehicle_state_number IS NOT NULL",
+            "status != 'active' OR (vehicle_state_number IS NOT NULL AND trim(vehicle_state_number) <> '')",
             name="ck_parking_cards_active_vehicle_state_number_not_null",
         ),
     )

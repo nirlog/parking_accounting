@@ -100,11 +100,11 @@ def filter_rows_by_quick_filter(rows: list[CardTableRow], filter_name: str) -> l
     if filter_name == "Все активные":
         return [r for r in rows if r.card_status == "active"]
     if filter_name == "Просроченные":
-        return [r for r in rows if r.payment_status == "Просрочено"]
+        return [r for r in rows if r.card_status == "active" and r.payment_status == "Просрочено"]
     if filter_name == "Оплата скоро закончится":
-        return [r for r in rows if r.payment_status == "Скоро закончится"]
+        return [r for r in rows if r.card_status == "active" and r.payment_status == "Скоро закончится"]
     if filter_name == "Нет оплат":
-        return [r for r in rows if r.payment_status == "Нет оплат"]
+        return [r for r in rows if r.card_status == "active" and r.payment_status == "Нет оплат"]
     if filter_name == "Закрытые":
         return [r for r in rows if r.card_status == "closed"]
     if filter_name == "Архив":
