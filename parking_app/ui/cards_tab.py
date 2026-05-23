@@ -16,11 +16,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from parking_app.app.config import EXPORTS_DIR
 from parking_app.database.db import SessionLocal
 from parking_app.ui.card_form import CardFormDialog
 from parking_app.ui.close_card_dialog import CloseCardDialog
 from parking_app.ui.card_details_dialog import CardDetailsDialog
 from parking_app.ui.payment_form import PaymentFormDialog
+from parking_app.services.cards_export_service import build_cards_export_rows, cards_export_columns
+from parking_app.services.export_service import export_rows_to_xlsx
 from parking_app.services.cards_table_service import (
     CardTableRow,
     build_card_table_rows,
@@ -36,6 +39,7 @@ class CardsTab(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._all_rows: list[CardTableRow] = []
+        self._visible_rows: list[CardTableRow] = []
 
         root_layout = QVBoxLayout(self)
         root_layout.setSpacing(14)
@@ -45,9 +49,11 @@ class CardsTab(QWidget):
         self.search_input.setPlaceholderText("Введите ФИО, номер машины, телефон или номер места")
         self.search_button = QPushButton("Найти", self)
         self.refresh_button = QPushButton("Обновить", self)
+        self.export_button = QPushButton("Экспорт в Excel", self)
         search_layout.addWidget(self.search_input, stretch=1)
         search_layout.addWidget(self.search_button)
         search_layout.addWidget(self.refresh_button)
+        search_layout.addWidget(self.export_button)
         root_layout.addLayout(search_layout)
 
         filters_layout = QHBoxLayout()
@@ -101,6 +107,7 @@ class CardsTab(QWidget):
         self.search_button.clicked.connect(self.apply_filters)
         self.search_input.returnPressed.connect(self.apply_filters)
         self.refresh_button.clicked.connect(self.refresh_rows)
+        self.export_button.clicked.connect(self._export_to_excel)
         self.filter_group.buttonClicked.connect(self.apply_filters)
 
         self.refresh_rows()
@@ -115,6 +122,7 @@ class CardsTab(QWidget):
         filter_name = selected.text() if selected is not None else "Все активные"
         filtered = filter_rows_by_quick_filter(self._all_rows, filter_name)
         filtered = filter_rows_by_search(filtered, self.search_input.text())
+        self._visible_rows = filtered
         self._populate_table(filtered)
 
     def _populate_table(self, rows: list[CardTableRow]) -> None:
@@ -140,7 +148,7 @@ class CardsTab(QWidget):
                 row.phone,
                 paid_until,
                 row.payment_status,
-                row.card_status,
+                self._card_status_text(row.card_status),
             ]
             for col, value in enumerate(values):
                 item = QTableWidgetItem(value)
@@ -236,6 +244,27 @@ class CardsTab(QWidget):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.refresh_rows()
             self.cards_changed.emit()
+
+
+    def _card_status_text(self, status: str) -> str:
+        return {"active": "Активная", "closed": "Закрыта", "archived": "Архив"}.get(status, status)
+
+    def _export_to_excel(self) -> None:
+        if not self._visible_rows:
+            QMessageBox.information(self, "Информация", "Нет данных для экспорта.")
+            return
+        try:
+            export_rows = build_cards_export_rows(self._visible_rows)
+            out = export_rows_to_xlsx(
+                output_dir=EXPORTS_DIR,
+                report_name="cards",
+                sheet_name="Карточки",
+                columns=cards_export_columns(),
+                rows=export_rows,
+            )
+            QMessageBox.information(self, "Информация", f"Экспорт выполнен: {out}")
+        except Exception:
+            QMessageBox.warning(self, "Ошибка", "Не удалось выполнить экспорт карточек.")
 
     def _show_placeholder_message(self) -> None:
         QMessageBox.information(self, "Информация", "Будет добавлено позже")

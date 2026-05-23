@@ -140,6 +140,19 @@ class MainWindowSmokeTests(unittest.TestCase):
         tab._refresh()
         self.assertFalse(tab._date_filter_enabled)
 
+
+    def test_cards_tab_has_export_button_and_visible_rows(self) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        qt_widgets = importlib.import_module("PySide6.QtWidgets")
+        QApplication = qt_widgets.QApplication
+        app = QApplication.instance() or QApplication([])
+        from parking_app.ui.cards_tab import CardsTab
+
+        tab = CardsTab()
+        self.assertTrue(hasattr(tab, "export_button"))
+        tab.apply_filters()
+        self.assertTrue(hasattr(tab, "_visible_rows"))
+
     def test_close_card_dialog_import_smoke(self) -> None:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         qt_widgets = importlib.import_module("PySide6.QtWidgets")
