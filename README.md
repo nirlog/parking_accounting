@@ -1426,6 +1426,23 @@ A767AB178
 
 ---
 
+## Runtime-хранение данных
+
+По умолчанию рабочие данные приложения хранятся в пользовательской папке данных, а не внутри каталога установки программы.
+
+- Windows: `%LOCALAPPDATA%\ParkingAccounting` (если `LOCALAPPDATA` недоступен, используется `%APPDATA%\ParkingAccounting`).
+- Linux/macOS и другие POSIX: `$XDG_DATA_HOME/parking_accounting` или `~/.local/share/parking_accounting`.
+
+В этой папке создаются:
+
+- `storage/parking.sqlite`
+- `storage/photos/clients`
+- `storage/photos/vehicles`
+- `exports/`
+- `backups/`
+
+Для разработки и тестов путь можно переопределить переменной окружения `PARKING_APP_DATA_DIR`.
+
 ## 27. Особые замечания
 
 1. Программа должна быть максимально простой для пользователя.

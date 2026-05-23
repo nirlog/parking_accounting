@@ -6,6 +6,19 @@ from decimal import Decimal
 from pathlib import Path
 
 
+FORMULA_PREFIXES = ("=", "+", "-", "@")
+
+
+def sanitize_excel_cell(value):
+    if not isinstance(value, str):
+        return value
+    if value == "":
+        return ""
+    if value.lstrip().startswith(FORMULA_PREFIXES):
+        return "'" + value
+    return value
+
+
 @dataclass(frozen=True)
 class ExportColumn:
     key: str
@@ -70,7 +83,7 @@ def export_rows_to_xlsx(
         ws.append(["Данные отсутствуют"])
     else:
         for row in rows:
-            ws.append([row.get(c.key, "") for c in columns])
+            ws.append([sanitize_excel_cell(row.get(c.key, "")) for c in columns])
 
     wb.save(path)
     return path

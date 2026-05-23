@@ -18,6 +18,7 @@ from parking_app.services.export_service import (
     format_date_ddmmyyyy,
     make_export_filename,
     ensure_unique_export_path,
+    sanitize_excel_cell,
 )
 
 
@@ -42,6 +43,16 @@ class ExportServiceTests(unittest.TestCase):
             base.write_bytes(b"a")
             unique = ensure_unique_export_path(base)
             self.assertEqual(unique.name, "payments_2026-05-21_0830_1.xlsx")
+
+
+    def test_sanitize_excel_cell(self) -> None:
+        self.assertEqual(sanitize_excel_cell("=1+1"), "'=1+1")
+        self.assertEqual(sanitize_excel_cell("+test"), "'+test")
+        self.assertEqual(sanitize_excel_cell("-test"), "'-test")
+        self.assertEqual(sanitize_excel_cell("@test"), "'@test")
+        self.assertEqual(sanitize_excel_cell("  =1+1"), "'  =1+1")
+        self.assertEqual(sanitize_excel_cell("Иванов"), "Иванов")
+        self.assertEqual(sanitize_excel_cell(123), 123)
 
     @unittest.skipUnless(OPENPYXL_AVAILABLE, "openpyxl is not installed")
     def test_export_with_empty_rows_writes_marker(self) -> None:
@@ -77,6 +88,21 @@ class ExportServiceTests(unittest.TestCase):
             self.assertEqual(ws["B1"].value, "ФИО")
             self.assertEqual(ws["A2"].value, "000001")
             self.assertEqual(ws["B2"].value, "Иванов Иван")
+
+    @unittest.skipUnless(OPENPYXL_AVAILABLE, "openpyxl is not installed")
+    def test_export_escapes_formula_in_user_value(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            out = export_rows_to_xlsx(
+                output_dir=Path(td),
+                report_name="payments",
+                sheet_name="Оплаты",
+                columns=[ExportColumn("note", "Комментарий")],
+                rows=[{"note": "=1+1"}],
+                now=datetime(2026, 5, 21, 8, 35),
+            )
+            wb = load_workbook(out)
+            ws = wb["Оплаты"]
+            self.assertEqual(ws["A2"].value, "'=1+1")
 
 
 if __name__ == "__main__":
