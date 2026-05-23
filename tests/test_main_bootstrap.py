@@ -97,6 +97,14 @@ class MainWindowSmokeTests(unittest.TestCase):
         tab._refresh()
         self.assertFalse(tab._date_filter_enabled)
 
+    def test_close_card_dialog_import_smoke(self) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        qt_widgets = importlib.import_module("PySide6.QtWidgets")
+        QApplication = qt_widgets.QApplication
+        _app = QApplication.instance() or QApplication([])
+        module = importlib.import_module("parking_app.ui.close_card_dialog")
+        self.assertTrue(hasattr(module, "CloseCardDialog"))
+
 
 if __name__ == "__main__":
     unittest.main()

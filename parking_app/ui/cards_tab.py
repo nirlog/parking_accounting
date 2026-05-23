@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from parking_app.database.db import SessionLocal
 from parking_app.ui.card_form import CardFormDialog
+from parking_app.ui.close_card_dialog import CloseCardDialog
 from parking_app.ui.payment_form import PaymentFormDialog
 from parking_app.services.cards_table_service import (
     CardTableRow,
@@ -84,10 +85,13 @@ class CardsTab(QWidget):
         self.add_payment_button.clicked.connect(self._open_add_payment_dialog)
         actions_layout.addWidget(self.add_payment_button)
 
-        for title in ["Печать карточки", "Закрыть карточку"]:
-            button = QPushButton(title, self)
-            button.clicked.connect(self._show_placeholder_message)
-            actions_layout.addWidget(button)
+        print_button = QPushButton("Печать карточки", self)
+        print_button.clicked.connect(self._show_placeholder_message)
+        actions_layout.addWidget(print_button)
+
+        self.close_card_button = QPushButton("Закрыть карточку", self)
+        self.close_card_button.clicked.connect(self._open_close_card_dialog)
+        actions_layout.addWidget(self.close_card_button)
         root_layout.addLayout(actions_layout)
 
         self.search_button.clicked.connect(self.apply_filters)
@@ -169,6 +173,34 @@ class CardsTab(QWidget):
             dialog = PaymentFormDialog(card_id, self)
         except ValueError as exc:
             if str(exc) == "PAYMENT_CARD_NOT_FOUND":
+                QMessageBox.warning(self, "Ошибка", "Карточка не найдена. Обновите список карточек.")
+                return
+            raise
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.refresh_rows()
+
+    def _open_close_card_dialog(self) -> None:
+        row_idx = self.table.currentRow()
+        if row_idx < 0:
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для закрытия.")
+            return
+        first_item = self.table.item(row_idx, 0)
+        if first_item is None:
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для закрытия.")
+            return
+        card_id = first_item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(card_id, int):
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для закрытия.")
+            return
+        card_status = first_item.data(Qt.ItemDataRole.UserRole + 1)
+        if card_status != "active":
+            QMessageBox.warning(self, "Ошибка", "Закрыть можно только активную карточку.")
+            return
+
+        try:
+            dialog = CloseCardDialog(card_id, self)
+        except ValueError as exc:
+            if str(exc) == "CARD_NOT_FOUND":
                 QMessageBox.warning(self, "Ошибка", "Карточка не найдена. Обновите список карточек.")
                 return
             raise
