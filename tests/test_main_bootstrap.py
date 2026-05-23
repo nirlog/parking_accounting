@@ -81,6 +81,8 @@ class MainWindowSmokeTests(unittest.TestCase):
         self.assertIn("selection-color", ss)
         self.assertIn("QHeaderView::section", ss)
         self.assertIn("QTableWidget", ss)
+        self.assertIn("alternate-background-color", ss)
+        self.assertIn("selection-background-color", ss)
 
 
 if __name__ == "__main__":

@@ -42,6 +42,7 @@ class PaymentsTableServiceTests(unittest.TestCase):
             place_id=place.id,
             start_date=date(2026, 1, 1),
             status="active",
+            vehicle_state_number=vehicle.state_number,
         )
         session.add(card)
         session.flush()

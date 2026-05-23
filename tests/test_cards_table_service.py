@@ -50,6 +50,7 @@ class CardsTableServiceTests(unittest.TestCase):
             place_id=place.id,
             start_date=date(2026, 1, 1),
             status=status,
+            vehicle_state_number=state_number if status == "active" else None,
         )
         session.add(card)
         session.flush()
@@ -139,10 +140,10 @@ class CardsTableServiceTests(unittest.TestCase):
 
     def test_natural_place_sort_order(self) -> None:
         with self.SessionLocal() as session:
-            self._create_card(session, place_number="10")
-            self._create_card(session, place_number="2")
-            self._create_card(session, place_number="1")
-            self._create_card(session, place_number="100")
+            self._create_card(session, place_number="10", state_number="А123АА178")
+            self._create_card(session, place_number="2", state_number="В123ВВ178")
+            self._create_card(session, place_number="1", state_number="С123СС178")
+            self._create_card(session, place_number="100", state_number="Е123ЕЕ178")
             session.commit()
 
             rows = build_card_table_rows(session, today=date(2026, 5, 21))

@@ -112,3 +112,28 @@ def apply_mvp_migrations(connection: Connection) -> None:
             """
         )
     )
+
+    connection.execute(
+        text(
+            """
+            CREATE TRIGGER IF NOT EXISTS trg_parking_cards_active_state_number_required_insert
+            BEFORE INSERT ON parking_cards
+            WHEN NEW.status = 'active' AND NEW.vehicle_state_number IS NULL
+            BEGIN
+                SELECT RAISE(ABORT, 'ACTIVE_CARD_REQUIRES_VEHICLE_STATE_NUMBER');
+            END;
+            """
+        )
+    )
+    connection.execute(
+        text(
+            """
+            CREATE TRIGGER IF NOT EXISTS trg_parking_cards_active_state_number_required_update
+            BEFORE UPDATE ON parking_cards
+            WHEN NEW.status = 'active' AND NEW.vehicle_state_number IS NULL
+            BEGIN
+                SELECT RAISE(ABORT, 'ACTIVE_CARD_REQUIRES_VEHICLE_STATE_NUMBER');
+            END;
+            """
+        )
+    )

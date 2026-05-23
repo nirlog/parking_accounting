@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from parking_app.database.db import Base
@@ -74,6 +74,10 @@ class ParkingCard(Base):
             "vehicle_state_number",
             unique=True,
             sqlite_where=text("status = 'active' AND vehicle_state_number IS NOT NULL"),
+        ),
+        CheckConstraint(
+            "status != 'active' OR vehicle_state_number IS NOT NULL",
+            name="ck_parking_cards_active_vehicle_state_number_not_null",
         ),
     )
 

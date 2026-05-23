@@ -38,6 +38,7 @@ class PaymentsRepositoryTests(unittest.TestCase):
             place_id=place.id,
             start_date=date(2026, 1, 1),
             status=status,
+            vehicle_state_number=state_number if status == "active" else None,
         )
         session.add(card)
         session.flush()
