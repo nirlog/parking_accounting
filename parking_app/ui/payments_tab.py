@@ -7,6 +7,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QDateEdit,
+    QDialog,
     QHBoxLayout,
     QLabel,
     QMessageBox,
@@ -24,6 +25,7 @@ from parking_app.services.payments_table_service import (
     calculate_total_amount_kopecks,
     format_amount_kopecks,
 )
+from parking_app.ui.cancel_payment_dialog import CancelPaymentDialog
 
 
 class PaymentsTab(QWidget):
@@ -92,12 +94,19 @@ class PaymentsTab(QWidget):
         totals.addWidget(self.sum_label)
         root.addLayout(totals)
 
+        actions = QHBoxLayout()
+        self.cancel_payment_button = QPushButton("Отменить оплату", self)
+        actions.addStretch()
+        actions.addWidget(self.cancel_payment_button)
+        root.addLayout(actions)
+
         self.today_button.clicked.connect(self._set_today)
         self.month_button.clicked.connect(self._set_this_month)
         self.show_button.clicked.connect(self._apply_selected_range)
         self.reset_button.clicked.connect(self._reset_filters)
         self.refresh_button.clicked.connect(self._refresh)
         self.include_cancelled_cb.toggled.connect(self._refresh)
+        self.cancel_payment_button.clicked.connect(self._open_cancel_payment_dialog)
 
         self._set_this_month()
 
@@ -172,8 +181,39 @@ class PaymentsTab(QWidget):
             for col, value in enumerate(values):
                 item = QTableWidgetItem(value)
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if col == 0:
+                    item.setData(Qt.ItemDataRole.UserRole, row.payment_id)
+                    item.setData(Qt.ItemDataRole.UserRole + 1, row.status)
                 self.table.setItem(i, col, item)
 
         total = calculate_total_amount_kopecks(self._rows)
         self.count_label.setText(f"Количество оплат: {len(self._rows)}")
         self.sum_label.setText(f"Сумма оплат: {format_amount_kopecks(total)} руб.")
+
+    def _open_cancel_payment_dialog(self) -> None:
+        row_idx = self.table.currentRow()
+        if row_idx < 0:
+            QMessageBox.warning(self, "Ошибка", "Выберите оплату для отмены.")
+            return
+        item = self.table.item(row_idx, 0)
+        if item is None:
+            QMessageBox.warning(self, "Ошибка", "Выберите оплату для отмены.")
+            return
+        payment_id = item.data(Qt.ItemDataRole.UserRole)
+        payment_status = item.data(Qt.ItemDataRole.UserRole + 1)
+        if not isinstance(payment_id, int):
+            QMessageBox.warning(self, "Ошибка", "Выберите оплату для отмены.")
+            return
+        if payment_status != "active":
+            QMessageBox.warning(self, "Ошибка", "Можно отменить только активную оплату.")
+            return
+
+        try:
+            dialog = CancelPaymentDialog(payment_id, self)
+        except ValueError as exc:
+            if str(exc) == "PAYMENT_NOT_FOUND":
+                QMessageBox.warning(self, "Ошибка", "Оплата не найдена. Обновите список.")
+                return
+            raise
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._refresh()
