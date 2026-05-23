@@ -18,7 +18,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from parking_app.app.config import EXPORTS_DIR
 from parking_app.database.db import SessionLocal
+from parking_app.services.export_service import export_rows_to_xlsx
+from parking_app.services.payments_export_service import build_payments_export_rows, payments_export_columns
 from parking_app.services.payments_table_service import (
     PaymentTableRow,
     build_payment_table_rows,
@@ -47,6 +50,7 @@ class PaymentsTab(QWidget):
         self.show_button = QPushButton("Показать", self)
         self.reset_button = QPushButton("Сбросить", self)
         self.refresh_button = QPushButton("Обновить", self)
+        self.export_button = QPushButton("Экспорт в Excel", self)
         self.include_cancelled_cb = QCheckBox("Показывать отменённые", self)
 
         filters.addWidget(QLabel("Дата с", self))
@@ -58,6 +62,7 @@ class PaymentsTab(QWidget):
         filters.addWidget(self.show_button)
         filters.addWidget(self.reset_button)
         filters.addWidget(self.refresh_button)
+        filters.addWidget(self.export_button)
         filters.addWidget(self.include_cancelled_cb)
         root.addLayout(filters)
 
@@ -107,6 +112,7 @@ class PaymentsTab(QWidget):
         self.refresh_button.clicked.connect(self._refresh)
         self.include_cancelled_cb.toggled.connect(self._refresh)
         self.cancel_payment_button.clicked.connect(self._open_cancel_payment_dialog)
+        self.export_button.clicked.connect(self._export_to_excel)
 
         self._set_this_month()
 
@@ -175,7 +181,7 @@ class PaymentsTab(QWidget):
                 row.receipt_number,
                 row.fiscal_number,
                 row.accepted_by,
-                row.status,
+                "Активная" if row.status == "active" else "Отменена" if row.status == "cancelled" else row.status,
                 row.note,
             ]
             for col, value in enumerate(values):
@@ -189,6 +195,27 @@ class PaymentsTab(QWidget):
         total = calculate_total_amount_kopecks(self._rows)
         self.count_label.setText(f"Количество оплат: {len(self._rows)}")
         self.sum_label.setText(f"Сумма оплат: {format_amount_kopecks(total)} руб.")
+
+
+    def _export_to_excel(self) -> None:
+        if not self._rows:
+            QMessageBox.information(self, "Экспорт", "Нет данных для экспорта.")
+            return
+
+        try:
+            export_rows = build_payments_export_rows(self._rows)
+            path = export_rows_to_xlsx(
+                output_dir=EXPORTS_DIR,
+                report_name="payments",
+                sheet_name="Оплаты",
+                columns=payments_export_columns(),
+                rows=export_rows,
+            )
+        except Exception:
+            QMessageBox.warning(self, "Экспорт", "Не удалось выполнить экспорт оплат.")
+            return
+
+        QMessageBox.information(self, "Экспорт", f"Экспорт выполнен: {path}")
 
     def _open_cancel_payment_dialog(self) -> None:
         row_idx = self.table.currentRow()

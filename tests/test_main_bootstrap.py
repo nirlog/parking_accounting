@@ -92,6 +92,7 @@ class MainWindowSmokeTests(unittest.TestCase):
         from parking_app.ui.payments_tab import PaymentsTab
 
         tab = PaymentsTab()
+        self.assertTrue(hasattr(tab, "export_button"))
         tab._reset_filters()
         self.assertFalse(tab._date_filter_enabled)
         tab._refresh()
