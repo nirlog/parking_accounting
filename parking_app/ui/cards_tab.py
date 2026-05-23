@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from parking_app.database.db import SessionLocal
 from parking_app.ui.card_form import CardFormDialog
 from parking_app.ui.close_card_dialog import CloseCardDialog
+from parking_app.ui.card_details_dialog import CardDetailsDialog
 from parking_app.ui.payment_form import PaymentFormDialog
 from parking_app.services.cards_table_service import (
     CardTableRow,
@@ -77,9 +78,9 @@ class CardsTab(QWidget):
         self.add_card_button.clicked.connect(self._open_add_card_dialog)
         actions_layout.addWidget(self.add_card_button)
 
-        open_button = QPushButton("Открыть карточку", self)
-        open_button.clicked.connect(self._show_placeholder_message)
-        actions_layout.addWidget(open_button)
+        self.open_card_button = QPushButton("Открыть карточку", self)
+        self.open_card_button.clicked.connect(self._open_card_details_dialog)
+        actions_layout.addWidget(self.open_card_button)
 
         self.add_payment_button = QPushButton("Добавить оплату", self)
         self.add_payment_button.clicked.connect(self._open_add_payment_dialog)
@@ -150,6 +151,29 @@ class CardsTab(QWidget):
         dialog = CardFormDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.refresh_rows()
+
+
+    def _open_card_details_dialog(self) -> None:
+        row_idx = self.table.currentRow()
+        if row_idx < 0:
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для открытия.")
+            return
+        first_item = self.table.item(row_idx, 0)
+        if first_item is None:
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для открытия.")
+            return
+        card_id = first_item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(card_id, int):
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для открытия.")
+            return
+        try:
+            dialog = CardDetailsDialog(card_id, self)
+        except ValueError as exc:
+            if str(exc) == "CARD_NOT_FOUND":
+                QMessageBox.warning(self, "Ошибка", "Карточка не найдена. Обновите список карточек.")
+                return
+            raise
+        dialog.exec()
 
     def _open_add_payment_dialog(self) -> None:
         row_idx = self.table.currentRow()
