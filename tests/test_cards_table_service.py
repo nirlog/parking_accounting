@@ -167,6 +167,21 @@ class CardsTableServiceTests(unittest.TestCase):
         expiring = filter_rows_by_quick_filter(rows, "Оплата скоро закончится")
         self.assertEqual([r.card_id for r in expiring], [5])
 
+    def test_search_handles_none_state_number(self) -> None:
+        rows = [
+            CardTableRow(1, "000001", None, "101", "Иванов Иван", None, "—", "—", None, "Нет оплат", "active")
+        ]
+        result = filter_rows_by_search(rows, "Иванов")
+        self.assertEqual(len(result), 1)
+
+    def test_search_by_plate_skips_none_state_number(self) -> None:
+        rows = [
+            CardTableRow(1, "000001", None, "101", "Иванов Иван", None, "—", "—", None, "Нет оплат", "active"),
+            CardTableRow(2, "000002", None, "102", "Петров Пётр", "А123АА178", "—", "—", None, "Нет оплат", "active"),
+        ]
+        result = filter_rows_by_search(rows, "A123")
+        self.assertEqual([r.card_id for r in result], [2])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,7 +6,9 @@ LATIN_TO_CYR = str.maketrans({
 })
 
 
-def normalize_phone(raw: str) -> str:
+def normalize_phone(raw: str | None) -> str:
+    if not raw:
+        return ""
     digits = re.sub(r"\D", "", raw)
     if len(digits) == 11 and digits.startswith("8"):
         digits = "7" + digits[1:]
@@ -15,6 +17,8 @@ def normalize_phone(raw: str) -> str:
     return digits
 
 
-def normalize_state_number(raw: str) -> str:
+def normalize_state_number(raw: str | None) -> str:
+    if not raw:
+        return ""
     cleaned = re.sub(r"[\s\-]+", "", raw).upper()
     return cleaned.translate(LATIN_TO_CYR)

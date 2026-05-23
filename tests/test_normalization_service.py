@@ -13,6 +13,12 @@ class NormalizationServiceTests(unittest.TestCase):
     def test_phone_adds_7_for_ten_digits(self) -> None:
         self.assertEqual(normalize_phone("9214431583"), "79214431583")
 
+    def test_state_number_none_returns_empty(self) -> None:
+        self.assertEqual(normalize_state_number(None), "")
+
+    def test_state_number_empty_returns_empty(self) -> None:
+        self.assertEqual(normalize_state_number(""), "")
+
     def test_state_number_latin_to_cyrillic(self) -> None:
         self.assertEqual(normalize_state_number("A767AB178"), "А767АВ178")
 

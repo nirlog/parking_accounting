@@ -30,6 +30,10 @@ def _compact_join(parts: list[str | None]) -> str:
     return " ".join(part.strip() for part in parts if part and part.strip())
 
 
+def _safe_text(value: object) -> str:
+    return value.strip() if isinstance(value, str) and value.strip() else "—"
+
+
 def build_card_table_rows(session: Session, *, today: date, warning_days: int = 3) -> list[CardTableRow]:
     paid_until_subq = (
         select(Payment.parking_card_id, func.max(Payment.period_to).label("paid_until"))
@@ -64,7 +68,7 @@ def build_card_table_rows(session: Session, *, today: date, warning_days: int = 
     for rec in session.execute(stmt):
         fio = _compact_join([rec.surname, rec.name, rec.patronymic])
         vehicle = _compact_join([rec.brand, rec.model]) or "—"
-        phone = rec.phone.strip() if isinstance(rec.phone, str) and rec.phone.strip() else "—"
+        phone = _safe_text(rec.phone)
         paid_until = rec.paid_until
         payment_status = str(calculate_payment_status(paid_until, today=today, warning_days=warning_days))
 
@@ -75,7 +79,7 @@ def build_card_table_rows(session: Session, *, today: date, warning_days: int = 
                 paper_card_number=rec.paper_card_number or None,
                 place_number=rec.place_number,
                 fio=fio,
-                state_number=rec.state_number,
+                state_number=_safe_text(rec.state_number),
                 vehicle=vehicle,
                 phone=phone,
                 paid_until=paid_until,
@@ -126,12 +130,13 @@ def filter_rows_by_search(rows: list[CardTableRow], query: str) -> list[CardTabl
         fio = row.fio.lower()
         place = row.place_number.lower()
         phone_digits = normalize_phone(row.phone)
-        plate_normalized = normalize_state_number(row.state_number)
+        raw_state_number = row.state_number or ""
+        plate_normalized = normalize_state_number(raw_state_number)
         haystack = [
             fio,
             place,
             row.phone.lower(),
-            row.state_number.lower(),
+            (row.state_number or "").lower(),
             row.card_number.lower(),
             (row.paper_card_number or "").lower(),
         ]
