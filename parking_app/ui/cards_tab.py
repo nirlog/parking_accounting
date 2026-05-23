@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from parking_app.database.db import SessionLocal
 from parking_app.ui.card_form import CardFormDialog
+from parking_app.ui.payment_form import PaymentFormDialog
 from parking_app.services.cards_table_service import (
     CardTableRow,
     build_card_table_rows,
@@ -75,7 +76,15 @@ class CardsTab(QWidget):
         self.add_card_button.clicked.connect(self._open_add_card_dialog)
         actions_layout.addWidget(self.add_card_button)
 
-        for title in ["Открыть карточку", "Добавить оплату", "Печать карточки", "Закрыть карточку"]:
+        open_button = QPushButton("Открыть карточку", self)
+        open_button.clicked.connect(self._show_placeholder_message)
+        actions_layout.addWidget(open_button)
+
+        self.add_payment_button = QPushButton("Добавить оплату", self)
+        self.add_payment_button.clicked.connect(self._open_add_payment_dialog)
+        actions_layout.addWidget(self.add_payment_button)
+
+        for title in ["Печать карточки", "Закрыть карточку"]:
             button = QPushButton(title, self)
             button.clicked.connect(self._show_placeholder_message)
             actions_layout.addWidget(button)
@@ -128,10 +137,30 @@ class CardsTab(QWidget):
             for col, value in enumerate(values):
                 item = QTableWidgetItem(value)
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if col == 0:
+                    item.setData(Qt.ItemDataRole.UserRole, row.card_id)
                 self.table.setItem(row_idx, col, item)
 
     def _open_add_card_dialog(self) -> None:
         dialog = CardFormDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.refresh_rows()
+
+    def _open_add_payment_dialog(self) -> None:
+        row_idx = self.table.currentRow()
+        if row_idx < 0:
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для добавления оплаты.")
+            return
+        first_item = self.table.item(row_idx, 0)
+        if first_item is None:
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для добавления оплаты.")
+            return
+        card_id = first_item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(card_id, int):
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для добавления оплаты.")
+            return
+
+        dialog = PaymentFormDialog(card_id, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.refresh_rows()
 
