@@ -3,6 +3,8 @@ from __future__ import annotations
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
+from parking_app.services.normalization_service import normalize_state_number
+
 
 MIGRATION_DUPLICATE_MARKER = "[migration duplicate active]"
 
@@ -85,6 +87,42 @@ def _archive_active_cards_with_missing_state_number(connection: Connection) -> N
     )
 
 
+
+
+def _normalize_legacy_state_number(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = normalize_state_number(value)
+    return normalized or None
+
+
+def _normalize_vehicle_state_numbers(connection: Connection) -> None:
+    if not (_table_exists(connection, "parking_cards") and _table_exists(connection, "vehicles")):
+        return
+
+    rows = connection.execute(
+        text(
+            """
+            SELECT pc.id AS card_id,
+                   pc.vehicle_state_number AS card_state_number,
+                   v.state_number AS vehicle_state_number
+            FROM parking_cards pc
+            LEFT JOIN vehicles v ON v.id = pc.vehicle_id
+            """
+        )
+    ).mappings().all()
+
+    for row in rows:
+        card_state_number = row["card_state_number"]
+        if isinstance(card_state_number, str) and card_state_number.strip():
+            normalized = _normalize_legacy_state_number(card_state_number)
+        else:
+            normalized = _normalize_legacy_state_number(row["vehicle_state_number"])
+
+        connection.execute(
+            text("UPDATE parking_cards SET vehicle_state_number = :value WHERE id = :card_id"),
+            {"value": normalized, "card_id": row["card_id"]},
+        )
 def apply_mvp_migrations(connection: Connection) -> None:
     """Apply additive SQLite-safe migrations for schema created by early MVP builds."""
     _add_column_if_missing(connection, "clients", "document_type", "VARCHAR(64)")
@@ -110,20 +148,7 @@ def apply_mvp_migrations(connection: Connection) -> None:
     _add_column_if_missing(connection, "parking_cards", "updated_at", "DATETIME")
     _add_column_if_missing(connection, "parking_cards", "vehicle_state_number", "VARCHAR(32)")
 
-    if _table_exists(connection, "parking_cards") and _table_exists(connection, "vehicles"):
-        connection.execute(
-            text(
-                """
-                UPDATE parking_cards
-                SET vehicle_state_number = (
-                    SELECT vehicles.state_number
-                    FROM vehicles
-                    WHERE vehicles.id = parking_cards.vehicle_id
-                )
-                WHERE vehicle_state_number IS NULL
-                """
-            )
-        )
+    _normalize_vehicle_state_numbers(connection)
 
     _add_column_if_missing(connection, "payments", "cancel_reason", "TEXT")
     _add_column_if_missing(connection, "payments", "cancelled_at", "DATETIME")

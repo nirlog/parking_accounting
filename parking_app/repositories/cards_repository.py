@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import Select, exists, select
 from sqlalchemy.orm import Session
 
-from parking_app.database.models import ParkingCard, Vehicle
+from parking_app.database.models import ParkingCard
 
 
 ACTIVE_CARD_STATUSES = ("active",)
@@ -28,8 +28,7 @@ def has_active_card_for_state_number(session: Session, state_number: str) -> boo
     stmt = select(
         exists(
             _active_cards_query()
-            .join(Vehicle, Vehicle.id == ParkingCard.vehicle_id)
-            .where(Vehicle.state_number == state_number)
+            .where(ParkingCard.vehicle_state_number == state_number)
             .subquery()
         )
     )

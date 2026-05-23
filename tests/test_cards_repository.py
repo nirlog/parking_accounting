@@ -17,6 +17,7 @@ if SQLALCHEMY_AVAILABLE:
         card_number_exists,
         has_active_card_for_place,
         has_active_card_for_vehicle,
+        has_active_card_for_state_number,
         next_card_number,
     )
 
@@ -267,6 +268,45 @@ class CardsRepositoryTests(unittest.TestCase):
                 )
             )
             session.commit()
+
+    def test_has_active_card_for_state_number_uses_card_snapshot(self) -> None:
+        with self.SessionLocal() as session:
+            client, vehicle, place = self._seed_base(session)
+            vehicle.state_number = "A 123 AA 178"
+            session.add(
+                ParkingCard(
+                    card_number="000600",
+                    client_id=client.id,
+                    vehicle_id=vehicle.id,
+                    place_id=place.id,
+                    start_date=date(2026, 5, 21),
+                    status="active",
+                    vehicle_state_number="А123АА178",
+                )
+            )
+            session.commit()
+
+            self.assertTrue(has_active_card_for_state_number(session, "А123АА178"))
+
+    def test_has_active_card_for_state_number_ignores_vehicle_current_value(self) -> None:
+        with self.SessionLocal() as session:
+            client, vehicle, place = self._seed_base(session)
+            vehicle.state_number = "B999BB178"
+            session.add(
+                ParkingCard(
+                    card_number="000601",
+                    client_id=client.id,
+                    vehicle_id=vehicle.id,
+                    place_id=place.id,
+                    start_date=date(2026, 5, 21),
+                    status="active",
+                    vehicle_state_number="А123АА178",
+                )
+            )
+            session.commit()
+
+            self.assertTrue(has_active_card_for_state_number(session, "А123АА178"))
+            self.assertFalse(has_active_card_for_state_number(session, "В999ВВ178"))
 
 
 if __name__ == "__main__":

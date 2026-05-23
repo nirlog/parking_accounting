@@ -168,6 +168,65 @@ class MigrationsTests(unittest.TestCase):
             note = conn.execute(text("SELECT note FROM parking_cards WHERE id=2")).scalar_one()
             self.assertEqual(note.count('[migration duplicate active]'), 1)
 
+    def test_migration_normalizes_vehicle_state_number_from_vehicle(self) -> None:
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        with engine.begin() as conn:
+            self._create_old_schema(conn)
+            conn.execute(text("INSERT INTO clients(id, surname, name) VALUES (1, 'Иванов', 'Иван')"))
+            conn.execute(text("INSERT INTO vehicles(id, client_id, state_number) VALUES (1, 1, 'A 123 AA 178')"))
+            conn.execute(text("INSERT INTO parking_places(id, place_number, status) VALUES (1, '101', 'free')"))
+            conn.execute(text("INSERT INTO parking_cards(id, card_number, client_id, vehicle_id, place_id, start_date, status) VALUES (1, '000001', 1, 1, 1, '2026-01-01', 'active')"))
+
+            apply_mvp_migrations(conn)
+            value = conn.execute(text("SELECT vehicle_state_number FROM parking_cards WHERE id=1")).scalar_one()
+            self.assertEqual(value, "А123АА178")
+
+    def test_migration_normalizes_existing_vehicle_state_number(self) -> None:
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        with engine.begin() as conn:
+            self._create_old_schema(conn)
+            conn.execute(text("ALTER TABLE parking_cards ADD COLUMN vehicle_state_number VARCHAR(32)"))
+            conn.execute(text("INSERT INTO clients(id, surname, name) VALUES (1, 'Иванов', 'Иван')"))
+            conn.execute(text("INSERT INTO vehicles(id, client_id, state_number) VALUES (1, 1, 'B999BB178')"))
+            conn.execute(text("INSERT INTO parking_places(id, place_number, status) VALUES (1, '101', 'free')"))
+            conn.execute(text("INSERT INTO parking_cards(id, card_number, client_id, vehicle_id, place_id, start_date, status, vehicle_state_number) VALUES (1, '000001', 1, 1, 1, '2026-01-01', 'active', ' A-123-aa 178 ')"))
+
+            apply_mvp_migrations(conn)
+            value = conn.execute(text("SELECT vehicle_state_number FROM parking_cards WHERE id=1")).scalar_one()
+            self.assertEqual(value, "А123АА178")
+
+    def test_migration_archives_duplicates_after_state_number_normalization(self) -> None:
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        with engine.begin() as conn:
+            self._create_old_schema(conn)
+            conn.execute(text("INSERT INTO clients(id, surname, name) VALUES (1,'A','A'),(2,'B','B')"))
+            conn.execute(text("INSERT INTO vehicles(id, client_id, state_number) VALUES (1,1,'A 123 AA 178'),(2,2,'А123АА178')"))
+            conn.execute(text("INSERT INTO parking_places(id, place_number, status) VALUES (1,'101','free'),(2,'102','free')"))
+            conn.execute(text("INSERT INTO parking_cards(id, card_number, client_id, vehicle_id, place_id, start_date, status) VALUES (1,'000001',1,1,1,'2026-01-01','active'), (2,'000002',2,2,2,'2026-01-01','active')"))
+
+            apply_mvp_migrations(conn)
+
+            rows = conn.execute(text("SELECT id, status, vehicle_state_number FROM parking_cards ORDER BY id")).mappings().all()
+            self.assertEqual(rows[0]['status'], 'active')
+            self.assertEqual(rows[1]['status'], 'archived')
+            self.assertEqual(rows[0]['vehicle_state_number'], 'А123АА178')
+            self.assertEqual(rows[1]['vehicle_state_number'], 'А123АА178')
+
+    def test_migration_normalizes_blank_state_number_to_missing_and_archives_active(self) -> None:
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        with engine.begin() as conn:
+            self._create_old_schema(conn)
+            conn.execute(text("INSERT INTO clients(id, surname, name) VALUES (1,'A','A')"))
+            conn.execute(text("INSERT INTO vehicles(id, client_id, state_number) VALUES (1,1,'   ')"))
+            conn.execute(text("INSERT INTO parking_places(id, place_number, status) VALUES (1,'101','free')"))
+            conn.execute(text("INSERT INTO parking_cards(id, card_number, client_id, vehicle_id, place_id, start_date, status) VALUES (1,'000001',1,1,1,'2026-01-01','active')"))
+
+            apply_mvp_migrations(conn)
+            row = conn.execute(text("SELECT status, vehicle_state_number, note FROM parking_cards WHERE id=1")).mappings().one()
+            self.assertEqual(row['status'], 'archived')
+            self.assertIsNone(row['vehicle_state_number'])
+            self.assertIn('[migration duplicate active]', row['note'])
+
 
 if __name__ == "__main__":
     unittest.main()
