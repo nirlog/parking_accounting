@@ -6,7 +6,32 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from parking_app.database.models import ParkingCard, Payment
-from parking_app.services.card_closing_service import calculate_close_card_result
+from parking_app.services.card_closing_service import CloseCardResult
+from parking_app.services.payment_service import calculate_refund
+
+
+def calculate_refund_for_active_payments(
+    payments: list[Payment],
+    *,
+    closed_at: date,
+) -> CloseCardResult:
+    total_refund_days = 0
+    total_refund_amount_kopecks = 0
+    for payment in payments:
+        refund_days, refund_amount = calculate_refund(
+            period_from=payment.period_from,
+            period_to=payment.period_to,
+            amount_kopecks=payment.amount_kopecks,
+            closed_at=closed_at,
+        )
+        total_refund_days += refund_days
+        total_refund_amount_kopecks += refund_amount
+
+    return CloseCardResult(
+        closed_with_active_paid_period=total_refund_days > 0,
+        refund_days=total_refund_days,
+        refund_amount_kopecks=total_refund_amount_kopecks,
+    )
 
 
 def close_active_card(
@@ -22,19 +47,18 @@ def close_active_card(
     if card.status != "active":
         raise ValueError("CARD_NOT_ACTIVE")
 
-    last_payment = session.execute(
-        select(Payment)
-        .where(Payment.parking_card_id == parking_card_id, Payment.status == "active")
-        .order_by(Payment.period_to.desc(), Payment.id.desc())
-        .limit(1)
-    ).scalar_one_or_none()
-
-    result = calculate_close_card_result(
-        closed_at=closed_at,
-        paid_period_from=last_payment.period_from if last_payment is not None else None,
-        paid_period_to=last_payment.period_to if last_payment is not None else None,
-        paid_amount_kopecks=last_payment.amount_kopecks if last_payment is not None else None,
+    payments = list(
+        session.execute(
+            select(Payment)
+            .where(
+                Payment.parking_card_id == parking_card_id,
+                Payment.status == "active",
+                Payment.period_to > closed_at,
+            )
+            .order_by(Payment.period_from.asc(), Payment.period_to.asc(), Payment.id.asc())
+        ).scalars()
     )
+    result = calculate_refund_for_active_payments(payments, closed_at=closed_at)
 
     card.status = "closed"
     card.closed_at = closed_at

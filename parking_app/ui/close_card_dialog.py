@@ -18,8 +18,7 @@ from sqlalchemy import func, select
 
 from parking_app.database.db import SessionLocal
 from parking_app.database.models import Client, ParkingCard, ParkingPlace, Payment, Vehicle
-from parking_app.services.card_close_service import close_active_card
-from parking_app.services.card_closing_service import calculate_close_card_result
+from parking_app.services.card_close_service import calculate_refund_for_active_payments, close_active_card
 from parking_app.services.payments_table_service import format_amount_kopecks
 
 
@@ -124,19 +123,19 @@ class CloseCardDialog(QDialog):
     def _update_preview(self) -> None:
         closed_at = self.closed_at_edit.date().toPython()
         with SessionLocal() as session:
-            last_payment = session.execute(
+            payments = list(
+                session.execute(
                 select(Payment)
-                .where(Payment.parking_card_id == self.card_id, Payment.status == "active")
-                .order_by(Payment.period_to.desc(), Payment.id.desc())
-                .limit(1)
-            ).scalar_one_or_none()
+                .where(
+                    Payment.parking_card_id == self.card_id,
+                    Payment.status == "active",
+                    Payment.period_to > closed_at,
+                )
+                .order_by(Payment.period_from.asc(), Payment.period_to.asc(), Payment.id.asc())
+            ).scalars()
+            )
 
-        result = calculate_close_card_result(
-            closed_at=closed_at,
-            paid_period_from=last_payment.period_from if last_payment else None,
-            paid_period_to=last_payment.period_to if last_payment else None,
-            paid_amount_kopecks=last_payment.amount_kopecks if last_payment else None,
-        )
+        result = calculate_refund_for_active_payments(payments, closed_at=closed_at)
         if result.refund_days > 0:
             self.refund_label.setText(
                 "Есть действующий оплаченный период.\n"
