@@ -9,13 +9,17 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QMessageBox,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from parking_app.app.config import EXPORTS_DIR
 from parking_app.database.db import SessionLocal
+from parking_app.services.export_service import export_rows_to_xlsx
+from parking_app.services.places_export_service import build_places_export_rows, places_export_columns
 from parking_app.services.places_table_service import (
     PlaceTableRow,
     build_place_table_rows,
@@ -36,6 +40,7 @@ class PlacesTab(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._all_rows: list[PlaceTableRow] = []
+        self._visible_rows: list[PlaceTableRow] = []
 
         root_layout = QVBoxLayout(self)
         root_layout.setSpacing(14)
@@ -45,9 +50,11 @@ class PlacesTab(QWidget):
         self.search_input.setPlaceholderText("Введите номер места, ФИО, госномер или автомобиль")
         self.search_button = QPushButton("Найти", self)
         self.refresh_button = QPushButton("Обновить", self)
+        self.export_button = QPushButton("Экспорт в Excel", self)
         search_layout.addWidget(self.search_input, stretch=1)
         search_layout.addWidget(self.search_button)
         search_layout.addWidget(self.refresh_button)
+        search_layout.addWidget(self.export_button)
         root_layout.addLayout(search_layout)
 
         filters_layout = QHBoxLayout()
@@ -102,6 +109,7 @@ class PlacesTab(QWidget):
         self.search_button.clicked.connect(self.apply_filters)
         self.search_input.returnPressed.connect(self.apply_filters)
         self.refresh_button.clicked.connect(self.refresh_rows)
+        self.export_button.clicked.connect(self._export_to_excel)
         self.filter_group.buttonClicked.connect(self.apply_filters)
 
         self.refresh_rows()
@@ -116,6 +124,7 @@ class PlacesTab(QWidget):
         filter_name = selected.text() if selected is not None else "Все места"
         filtered = filter_place_rows(self._all_rows, filter_name)
         filtered = filter_place_rows_by_search(filtered, self.search_input.text())
+        self._visible_rows = filtered
         self._populate_table(filtered)
         self._update_totals()
 
@@ -157,6 +166,27 @@ class PlacesTab(QWidget):
                 item = QTableWidgetItem(value)
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 self.table.setItem(i, col, item)
+
+
+    def _export_to_excel(self) -> None:
+        if not self._visible_rows:
+            QMessageBox.information(self, "Экспорт", "Нет данных для экспорта.")
+            return
+
+        try:
+            export_rows = build_places_export_rows(self._visible_rows)
+            path = export_rows_to_xlsx(
+                output_dir=EXPORTS_DIR,
+                report_name="places",
+                sheet_name="Места",
+                columns=places_export_columns(),
+                rows=export_rows,
+            )
+        except Exception:
+            QMessageBox.warning(self, "Экспорт", "Не удалось выполнить экспорт мест.")
+            return
+
+        QMessageBox.information(self, "Экспорт", f"Экспорт выполнен: {path}")
 
     def _update_totals(self) -> None:
         total = len(self._all_rows)

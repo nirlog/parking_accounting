@@ -153,6 +153,19 @@ class MainWindowSmokeTests(unittest.TestCase):
         tab.apply_filters()
         self.assertTrue(hasattr(tab, "_visible_rows"))
 
+
+    def test_places_tab_has_export_button_and_visible_rows(self) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        qt_widgets = importlib.import_module("PySide6.QtWidgets")
+        QApplication = qt_widgets.QApplication
+        _app = QApplication.instance() or QApplication([])
+        from parking_app.ui.places_tab import PlacesTab
+
+        tab = PlacesTab()
+        self.assertTrue(hasattr(tab, "export_button"))
+        tab.apply_filters()
+        self.assertTrue(hasattr(tab, "_visible_rows"))
+
     def test_close_card_dialog_import_smoke(self) -> None:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         qt_widgets = importlib.import_module("PySide6.QtWidgets")
