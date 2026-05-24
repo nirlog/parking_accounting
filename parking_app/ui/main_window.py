@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from PySide6.QtWidgets import QMainWindow, QTabWidget
+from PySide6.QtWidgets import QApplication, QMainWindow, QTabWidget
 
 from parking_app.ui.cards_tab import CardsTab
 from parking_app.ui.payments_tab import PaymentsTab
 from parking_app.ui.places_tab import PlacesTab
 from parking_app.ui.reports_tab import ReportsTab
 from parking_app.ui.settings_tab import SettingsTab
+from parking_app.ui.styles import apply_large_accessible_style
 
 
 class MainWindow(QMainWindow):
@@ -31,6 +32,7 @@ class MainWindow(QMainWindow):
         self.cards_tab.cards_changed.connect(self._refresh_card_dependent_tabs)
         self.cards_tab.payments_changed.connect(lambda: self._refresh_payment_dependent_tabs(refresh_payments=True))
         self.payments_tab.payments_changed.connect(lambda: self._refresh_payment_dependent_tabs(refresh_payments=False))
+        self.settings_tab.theme_changed.connect(self._apply_theme)
 
         self.setCentralWidget(self.tabs)
 
@@ -43,3 +45,8 @@ class MainWindow(QMainWindow):
     def _refresh_card_dependent_tabs(self) -> None:
         self.places_tab.refresh_rows()
         self.payments_tab.refresh_rows()
+
+    def _apply_theme(self, theme_mode: str) -> None:
+        app = QApplication.instance()
+        if app is not None:
+            apply_large_accessible_style(app, theme=theme_mode)

@@ -1481,3 +1481,34 @@ python -m venv .venv
 pip install -r requirements.txt
 python main.py
 ```
+
+## Сборка Windows-приложения
+
+1. Создайте окружение и установите зависимости:
+
+```bat
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r parking_app\requirements.txt
+```
+
+2. Выполните сборку:
+
+```bat
+scripts\build_windows.bat
+```
+
+Результат сборки:
+
+```text
+dist\ParkingAccounting\ParkingAccounting.exe
+```
+
+Проверка собранного приложения:
+
+```bat
+dist\ParkingAccounting\ParkingAccounting.exe --bootstrap-only
+```
+
+Приложение хранит БД, экспорты, бэкапы и фото в пользовательской папке данных (например `%LOCALAPPDATA%\ParkingAccounting`) и не требует прав администратора для записи.
+При необходимости путь можно переопределить через `PARKING_APP_DATA_DIR`.
