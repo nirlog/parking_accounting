@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QTabWidget
 
+from parking_app.database.db import SessionLocal
+from parking_app.services.settings_service import get_ui_font_settings, get_ui_theme_mode
 from parking_app.ui.cards_tab import CardsTab
 from parking_app.ui.payments_tab import PaymentsTab
 from parking_app.ui.places_tab import PlacesTab
@@ -32,7 +34,7 @@ class MainWindow(QMainWindow):
         self.cards_tab.cards_changed.connect(self._refresh_card_dependent_tabs)
         self.cards_tab.payments_changed.connect(lambda: self._refresh_payment_dependent_tabs(refresh_payments=True))
         self.payments_tab.payments_changed.connect(lambda: self._refresh_payment_dependent_tabs(refresh_payments=False))
-        self.settings_tab.theme_changed.connect(self._apply_theme)
+        self.settings_tab.appearance_changed.connect(self._apply_appearance_from_settings)
         self.settings_tab.settings_changed.connect(self._refresh_settings_dependent_tabs)
 
         self.setCentralWidget(self.tabs)
@@ -47,10 +49,18 @@ class MainWindow(QMainWindow):
         self.places_tab.refresh_rows()
         self.payments_tab.refresh_rows()
 
-    def _apply_theme(self, theme_mode: str) -> None:
+    def _apply_appearance_from_settings(self) -> None:
+        with SessionLocal() as session:
+            theme_mode = get_ui_theme_mode(session)
+            font_settings = get_ui_font_settings(session)
         app = QApplication.instance()
         if app is not None:
-            apply_large_accessible_style(app, theme=theme_mode)
+            apply_large_accessible_style(
+                app,
+                theme=theme_mode,
+                font_family=font_settings.family,
+                font_size=font_settings.size,
+            )
 
     def _refresh_settings_dependent_tabs(self) -> None:
         self.cards_tab.refresh_rows()

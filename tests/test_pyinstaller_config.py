@@ -9,6 +9,9 @@ class PyInstallerConfigTests(unittest.TestCase):
         self.assertTrue(Path("parking_accounting.spec").exists())
         self.assertTrue(Path("scripts/build_windows.bat").exists())
         self.assertTrue(Path("scripts/build_windows.ps1").exists())
+        self.assertTrue(Path("demo/demo_data.json").exists())
+        self.assertTrue(Path("scripts/load_demo_data.py").exists())
+        self.assertTrue(Path("scripts/load_demo_data.bat").exists())
 
     def test_spec_contains_expected_markers(self) -> None:
         content = Path("parking_accounting.spec").read_text(encoding="utf-8")

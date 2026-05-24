@@ -5,11 +5,14 @@ from unittest.mock import Mock, patch
 
 from parking_app.services.settings_service import (
     ParkingInfo,
+    UiFontSettings,
     get_parking_info,
+    get_ui_font_settings,
     get_ui_theme_mode,
     get_warning_days,
     parse_warning_days,
     set_parking_info,
+    set_ui_font_settings,
     set_ui_theme_mode,
     set_warning_days,
 )
@@ -81,6 +84,31 @@ class SettingsServiceTests(unittest.TestCase):
         mock_get_setting.side_effect = [expected.name, expected.address, expected.phone, expected.note]
         actual = get_parking_info(session)
         self.assertEqual(actual, expected)
+
+    @patch("parking_app.services.settings_service.get_setting")
+    def test_get_ui_font_settings_default(self, mock_get_setting: Mock) -> None:
+        mock_get_setting.side_effect = [None, None]
+        value = get_ui_font_settings(object())
+        self.assertEqual(value.family, "Segoe UI")
+        self.assertEqual(value.size, 13)
+
+    @patch("parking_app.services.settings_service.set_setting")
+    def test_set_ui_font_settings_saves_values(self, mock_set_setting: Mock) -> None:
+        session = object()
+        set_ui_font_settings(session, UiFontSettings(family="Arial", size=14))
+        self.assertEqual(mock_set_setting.call_count, 2)
+
+    def test_set_ui_font_settings_invalid_size(self) -> None:
+        with self.assertRaisesRegex(ValueError, "INVALID_FONT_SIZE"):
+            set_ui_font_settings(object(), UiFontSettings(size=9))
+        with self.assertRaisesRegex(ValueError, "INVALID_FONT_SIZE"):
+            set_ui_font_settings(object(), UiFontSettings(size=25))
+
+    @patch("parking_app.services.settings_service.get_setting")
+    def test_get_ui_font_settings_invalid_stored_size(self, mock_get_setting: Mock) -> None:
+        mock_get_setting.side_effect = ["Segoe UI", "abc"]
+        value = get_ui_font_settings(object())
+        self.assertEqual(value.size, 13)
 
 
 if __name__ == "__main__":

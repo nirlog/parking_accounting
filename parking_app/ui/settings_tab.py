@@ -7,6 +7,7 @@ import webbrowser
 from pathlib import Path
 
 from PySide6.QtCore import Signal
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -26,10 +27,13 @@ from parking_app.app.config import APP_DATA_DIR, BACKUPS_DIR, DB_PATH, EXPORTS_D
 from parking_app.database.db import SessionLocal
 from parking_app.services.settings_service import (
     ParkingInfo,
+    UiFontSettings,
     get_parking_info,
+    get_ui_font_settings,
     get_ui_theme_mode,
     get_warning_days,
     set_parking_info,
+    set_ui_font_settings,
     set_ui_theme_mode,
     set_warning_days,
 )
@@ -46,7 +50,7 @@ def open_path_in_file_manager(path: Path) -> None:
 
 
 class SettingsTab(QWidget):
-    theme_changed = Signal(str)
+    appearance_changed = Signal()
     settings_changed = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -68,6 +72,12 @@ class SettingsTab(QWidget):
         self.warning_days_spin = QSpinBox(self)
         self.warning_days_spin.setRange(0, 60)
         ui_form.addRow("Предупреждать за N дней до окончания оплаты", self.warning_days_spin)
+        self.font_combo = QFontComboBox(self)
+        ui_form.addRow("Шрифт интерфейса", self.font_combo)
+        self.font_size_spin = QSpinBox(self)
+        self.font_size_spin.setRange(10, 24)
+        self.font_size_spin.setValue(13)
+        ui_form.addRow("Размер шрифта", self.font_size_spin)
         root.addWidget(ui_group)
 
         parking_group = QGroupBox("Данные стоянки", self)
@@ -129,12 +139,15 @@ class SettingsTab(QWidget):
         with SessionLocal() as session:
             mode = get_ui_theme_mode(session)
             warning_days = get_warning_days(session)
+            ui_font = get_ui_font_settings(session)
             info = get_parking_info(session)
 
         idx = self.theme_combo.findData(mode)
         if idx >= 0:
             self.theme_combo.setCurrentIndex(idx)
         self.warning_days_spin.setValue(warning_days)
+        self.font_combo.setCurrentFont(QFont(ui_font.family))
+        self.font_size_spin.setValue(ui_font.size)
         self.parking_name_edit.setText(info.name)
         self.parking_address_edit.setText(info.address)
         self.parking_phone_edit.setText(info.phone)
@@ -148,10 +161,12 @@ class SettingsTab(QWidget):
             phone=self.parking_phone_edit.text().strip(),
             note=self.parking_note_edit.toPlainText().strip(),
         )
+        ui_font = UiFontSettings(family=self.font_combo.currentFont().family(), size=self.font_size_spin.value())
         try:
             with SessionLocal() as session:
                 set_ui_theme_mode(session, mode)
                 set_warning_days(session, self.warning_days_spin.value())
+                set_ui_font_settings(session, ui_font)
                 set_parking_info(session, info)
                 session.commit()
         except ValueError as exc:
@@ -159,6 +174,8 @@ class SettingsTab(QWidget):
                 QMessageBox.warning(self, "Ошибка", "Некорректный режим темы.")
             elif str(exc) == "INVALID_WARNING_DAYS":
                 QMessageBox.warning(self, "Ошибка", "Некорректное значение дней предупреждения.")
+            elif str(exc) == "INVALID_FONT_SIZE":
+                QMessageBox.warning(self, "Ошибка", "Некорректный размер шрифта.")
             else:
                 QMessageBox.warning(self, "Ошибка", "Не удалось сохранить настройки.")
             return
@@ -166,6 +183,6 @@ class SettingsTab(QWidget):
             QMessageBox.warning(self, "Ошибка", "Не удалось сохранить настройки.")
             return
 
-        self.theme_changed.emit(mode)
+        self.appearance_changed.emit()
         self.settings_changed.emit()
         QMessageBox.information(self, "Настройки", "Настройки сохранены.")

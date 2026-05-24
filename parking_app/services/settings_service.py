@@ -19,6 +19,12 @@ class ParkingInfo:
     note: str = ""
 
 
+@dataclass(slots=True)
+class UiFontSettings:
+    family: str = "Segoe UI"
+    size: int = 13
+
+
 def get_setting(session: Session, key: str, default: str | None = None) -> str | None:
     value = get_setting_value(session, key)
     return default if value is None else value
@@ -59,6 +65,27 @@ def set_warning_days(session: Session, days: int) -> None:
     if days < 0 or days > 60:
         raise ValueError("INVALID_WARNING_DAYS")
     set_setting(session, "payment_warning_days", str(days))
+
+
+def get_ui_font_settings(session: Session) -> UiFontSettings:
+    family = (get_setting(session, "ui.font_family", "Segoe UI") or "").strip() or "Segoe UI"
+    raw_size = get_setting(session, "ui.font_size", "13")
+    try:
+        size = int(raw_size or "13")
+    except (TypeError, ValueError):
+        size = 13
+    if size < 10 or size > 24:
+        size = 13
+    return UiFontSettings(family=family, size=size)
+
+
+def set_ui_font_settings(session: Session, settings: UiFontSettings) -> None:
+    size = int(settings.size)
+    if size < 10 or size > 24:
+        raise ValueError("INVALID_FONT_SIZE")
+    family = (settings.family or "").strip() or "Segoe UI"
+    set_setting(session, "ui.font_family", family)
+    set_setting(session, "ui.font_size", str(size))
 
 
 def get_parking_info(session: Session) -> ParkingInfo:

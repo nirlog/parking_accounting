@@ -22,6 +22,11 @@ class StylesTests(unittest.TestCase):
         self.assertIn("alternate-background-color", stylesheet)
         self.assertIn("selection-background-color", stylesheet)
 
+    def test_build_accessible_stylesheet_uses_custom_font_size(self) -> None:
+        stylesheet = build_accessible_stylesheet("light", font_size=16)
+        self.assertIn("font-size: 16pt", stylesheet)
+        self.assertIn("font-size: 15pt", stylesheet)
+
     def test_resolve_theme_mode_accepts_known_modes(self) -> None:
         self.assertEqual(resolve_theme_mode("light"), "light")
         self.assertEqual(resolve_theme_mode("dark"), "dark")

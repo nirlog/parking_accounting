@@ -1512,3 +1512,18 @@ dist\ParkingAccounting\ParkingAccounting.exe --bootstrap-only
 
 Приложение хранит БД, экспорты, бэкапы и фото в пользовательской папке данных (например `%LOCALAPPDATA%\ParkingAccounting`) и не требует прав администратора для записи.
 При необходимости путь можно переопределить через `PARKING_APP_DATA_DIR`.
+
+## Демо-данные
+
+Для презентации прототипа можно загрузить подготовленный набор данных:
+
+- `python scripts/load_demo_data.py --reset-demo`
+- `scripts\load_demo_data.bat`
+- `scripts\run_demo_windows.bat`
+
+Особенности:
+
+- данные хранятся в `demo/demo_data.json`;
+- демонстрационные карточки имеют префикс `DEMO-`;
+- повторная загрузка не создаёт дубликаты;
+- для презентации рекомендуется отдельный `PARKING_APP_DATA_DIR` (см. `scripts\run_demo_windows.bat`).

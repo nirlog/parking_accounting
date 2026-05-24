@@ -86,6 +86,7 @@ class MainWindowSmokeTests(unittest.TestCase):
         self.assertTrue(hasattr(window.cards_tab, "payments_changed"))
         self.assertTrue(hasattr(window.payments_tab, "payments_changed"))
         self.assertTrue(hasattr(window.payments_tab, "refresh_rows"))
+        self.assertTrue(hasattr(window, "_apply_appearance_from_settings"))
 
         window.cards_tab.refresh_rows = Mock()
         window.payments_tab.refresh_rows = Mock()
@@ -177,6 +178,8 @@ class MainWindowSmokeTests(unittest.TestCase):
         tab = SettingsTab()
         self.assertTrue(hasattr(tab, "theme_combo"))
         self.assertTrue(hasattr(tab, "warning_days_spin"))
+        self.assertTrue(hasattr(tab, "font_combo"))
+        self.assertTrue(hasattr(tab, "font_size_spin"))
         self.assertTrue(hasattr(tab, "parking_name_edit"))
         self.assertTrue(hasattr(tab, "save_button"))
 

@@ -68,11 +68,12 @@ def _table_palette(theme: str) -> dict[str, str]:
     }
 
 
-def build_accessible_stylesheet(theme: str) -> str:
+def build_accessible_stylesheet(theme: str, *, font_size: int = 13) -> str:
     palette = _table_palette(theme)
+    table_font_size = max(font_size - 1, 10)
     return f"""
     QWidget {{
-        font-size: 13pt;
+        font-size: {font_size}pt;
         color: {palette['widget_fg']};
         background-color: {palette['widget_bg']};
     }}
@@ -80,7 +81,7 @@ def build_accessible_stylesheet(theme: str) -> str:
     QPushButton {{
         min-height: 44px;
         padding: 8px 16px;
-        font-size: 13pt;
+        font-size: {font_size}pt;
     }}
 
     QLineEdit,
@@ -89,7 +90,7 @@ def build_accessible_stylesheet(theme: str) -> str:
     QTextEdit {{
         min-height: 40px;
         padding: 6px 10px;
-        font-size: 13pt;
+        font-size: {font_size}pt;
         color: {palette['input_fg']};
         background-color: {palette['input_bg']};
         border: 1px solid {palette['border']};
@@ -104,7 +105,7 @@ def build_accessible_stylesheet(theme: str) -> str:
         selection-background-color: #2d85b3;
         selection-color: #ffffff;
         border: 1px solid {palette['border']};
-        font-size: 12pt;
+        font-size: {table_font_size}pt;
     }}
 
     QTableView::item,
@@ -116,7 +117,7 @@ def build_accessible_stylesheet(theme: str) -> str:
     QHeaderView::section {{
         min-height: 40px;
         padding: 8px;
-        font-size: 12pt;
+        font-size: {table_font_size}pt;
         font-weight: 700;
         background-color: {palette['header_bg']};
         color: {palette['header_fg']};
@@ -125,10 +126,18 @@ def build_accessible_stylesheet(theme: str) -> str:
     """
 
 
-def apply_large_accessible_style(app: "QApplication" | Any, theme: str | None = None) -> None:
+def apply_large_accessible_style(
+    app: "QApplication" | Any,
+    theme: str | None = None,
+    *,
+    font_family: str | None = None,
+    font_size: int | None = None,
+) -> None:
     from PySide6.QtGui import QFont
 
-    font = QFont("Segoe UI", 13)
+    effective_family = (font_family or "Segoe UI").strip() or "Segoe UI"
+    effective_size = font_size if font_size is not None else 13
+    font = QFont(effective_family, effective_size)
     app.setFont(font)
     resolved = resolve_theme_mode(theme)
-    app.setStyleSheet(build_accessible_stylesheet(resolved))
+    app.setStyleSheet(build_accessible_stylesheet(resolved, font_size=effective_size))
