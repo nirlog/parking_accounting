@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt
 from parking_app.database.db import SessionLocal
 from parking_app.services.card_details_service import get_card_details
 from parking_app.services.payments_table_service import format_amount_kopecks
+from parking_app.services.settings_service import get_warning_days
 
 
 def _fmt_date(d: date | None) -> str:
@@ -29,7 +30,8 @@ class CardDetailsDialog(QDialog):
         self.setMinimumSize(900, 700)
 
         with SessionLocal() as session:
-            details, payments = get_card_details(session, parking_card_id=parking_card_id, today=date.today())
+            warning_days = get_warning_days(session)
+            details, payments = get_card_details(session, parking_card_id=parking_card_id, today=date.today(), warning_days=warning_days)
 
         root = QVBoxLayout(self)
         header = QGroupBox("Основная информация", self)

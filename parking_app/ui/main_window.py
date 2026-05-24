@@ -33,6 +33,7 @@ class MainWindow(QMainWindow):
         self.cards_tab.payments_changed.connect(lambda: self._refresh_payment_dependent_tabs(refresh_payments=True))
         self.payments_tab.payments_changed.connect(lambda: self._refresh_payment_dependent_tabs(refresh_payments=False))
         self.settings_tab.theme_changed.connect(self._apply_theme)
+        self.settings_tab.settings_changed.connect(self._refresh_settings_dependent_tabs)
 
         self.setCentralWidget(self.tabs)
 
@@ -50,3 +51,7 @@ class MainWindow(QMainWindow):
         app = QApplication.instance()
         if app is not None:
             apply_large_accessible_style(app, theme=theme_mode)
+
+    def _refresh_settings_dependent_tabs(self) -> None:
+        self.cards_tab.refresh_rows()
+        self.places_tab.refresh_rows()

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from parking_app.services.card_details_service import CardDetails, CardPaymentRow
 from parking_app.services.card_print_service import build_card_print_html, export_card_print_html
+from parking_app.services.settings_service import ParkingInfo
 
 
 class CardPrintServiceTests(unittest.TestCase):
@@ -113,6 +114,31 @@ class CardPrintServiceTests(unittest.TestCase):
         self.assertIn("&lt;script&gt;", html)
         self.assertIn("&lt;b&gt;auto&lt;/b&gt;", html)
         self.assertIn("&lt;img src=x&gt;", html)
+
+    def test_build_card_print_html_contains_parking_info(self) -> None:
+        html = build_card_print_html(
+            self._details(),
+            [self._payment()],
+            parking_info=ParkingInfo(
+                name="Стоянка №1",
+                address="СПб",
+                phone="+7 900 000-00-00",
+                note="Реквизиты",
+            ),
+        )
+        self.assertIn("Стоянка №1", html)
+        self.assertIn("СПб", html)
+        self.assertIn("+7 900 000-00-00", html)
+        self.assertIn("Реквизиты", html)
+
+    def test_build_card_print_html_escapes_parking_info(self) -> None:
+        html = build_card_print_html(
+            self._details(),
+            [self._payment()],
+            parking_info=ParkingInfo(name="<script>", address="", phone="", note=""),
+        )
+        self.assertNotIn("<script>", html)
+        self.assertIn("&lt;script&gt;", html)
 
     def test_export_card_print_html_creates_unique_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

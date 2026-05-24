@@ -167,6 +167,33 @@ class MainWindowSmokeTests(unittest.TestCase):
         tab.apply_filters()
         self.assertTrue(hasattr(tab, "_visible_rows"))
 
+    def test_settings_tab_has_required_controls(self) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        qt_widgets = importlib.import_module("PySide6.QtWidgets")
+        QApplication = qt_widgets.QApplication
+        _app = QApplication.instance() or QApplication([])
+        from parking_app.ui.settings_tab import SettingsTab
+
+        tab = SettingsTab()
+        self.assertTrue(hasattr(tab, "theme_combo"))
+        self.assertTrue(hasattr(tab, "warning_days_spin"))
+        self.assertTrue(hasattr(tab, "parking_name_edit"))
+        self.assertTrue(hasattr(tab, "save_button"))
+
+    def test_main_window_reacts_to_settings_signals(self) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        qt_widgets = importlib.import_module("PySide6.QtWidgets")
+        QApplication = qt_widgets.QApplication
+        _app = QApplication.instance() or QApplication([])
+        from parking_app.ui.main_window import MainWindow
+
+        window = MainWindow()
+        window.cards_tab.refresh_rows = Mock()
+        window.places_tab.refresh_rows = Mock()
+        window.settings_tab.settings_changed.emit()
+        window.cards_tab.refresh_rows.assert_called_once()
+        window.places_tab.refresh_rows.assert_called_once()
+
     def test_close_card_dialog_import_smoke(self) -> None:
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         qt_widgets = importlib.import_module("PySide6.QtWidgets")

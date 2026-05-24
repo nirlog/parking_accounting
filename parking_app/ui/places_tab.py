@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from parking_app.app.config import EXPORTS_DIR
 from parking_app.database.db import SessionLocal
 from parking_app.services.export_service import export_rows_to_xlsx
+from parking_app.services.settings_service import get_warning_days
 from parking_app.services.places_export_service import build_places_export_rows, places_export_columns
 from parking_app.services.places_table_service import (
     PlaceTableRow,
@@ -116,7 +117,8 @@ class PlacesTab(QWidget):
 
     def refresh_rows(self) -> None:
         with SessionLocal() as session:
-            self._all_rows = build_place_table_rows(session, today=date.today())
+            warning_days = get_warning_days(session)
+            self._all_rows = build_place_table_rows(session, today=date.today(), warning_days=warning_days)
         self.apply_filters()
 
     def apply_filters(self) -> None:

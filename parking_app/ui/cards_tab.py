@@ -26,6 +26,7 @@ from parking_app.services.card_details_service import get_card_details
 from parking_app.services.card_print_service import export_card_print_html
 from parking_app.services.cards_export_service import build_cards_export_rows, cards_export_columns
 from parking_app.services.export_service import export_rows_to_xlsx
+from parking_app.services.settings_service import get_parking_info, get_warning_days
 from parking_app.services.cards_table_service import (
     CardTableRow,
     build_card_table_rows,
@@ -116,7 +117,8 @@ class CardsTab(QWidget):
 
     def refresh_rows(self) -> None:
         with SessionLocal() as session:
-            self._all_rows = build_card_table_rows(session, today=date.today())
+            warning_days = get_warning_days(session)
+            self._all_rows = build_card_table_rows(session, today=date.today(), warning_days=warning_days)
         self.apply_filters()
 
     def apply_filters(self) -> None:
@@ -265,8 +267,10 @@ class CardsTab(QWidget):
 
         try:
             with SessionLocal() as session:
-                details, payments = get_card_details(session, parking_card_id=card_id, today=date.today())
-            out = export_card_print_html(output_dir=EXPORTS_DIR, details=details, payments=payments)
+                warning_days = get_warning_days(session)
+                details, payments = get_card_details(session, parking_card_id=card_id, today=date.today(), warning_days=warning_days)
+                parking_info = get_parking_info(session)
+            out = export_card_print_html(output_dir=EXPORTS_DIR, details=details, payments=payments, parking_info=parking_info)
             QMessageBox.information(self, "Информация", f"Файл карточки создан: {out}")
         except ValueError as exc:
             if str(exc) == "CARD_NOT_FOUND":

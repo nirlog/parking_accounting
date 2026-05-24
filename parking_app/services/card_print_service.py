@@ -7,6 +7,7 @@ from pathlib import Path
 from parking_app.services.card_details_service import CardDetails, CardPaymentRow
 from parking_app.services.export_service import ensure_unique_export_path
 from parking_app.services.payments_table_service import format_amount_kopecks
+from parking_app.services.settings_service import ParkingInfo
 
 
 def _fmt_date(value: date | None) -> str:
@@ -30,9 +31,18 @@ def _place_status_text(status: str) -> str:
     return {"free": "Свободно", "occupied": "Занято", "reserved": "Бронь", "repair": "Ремонт"}.get(status, status)
 
 
-def build_card_print_html(details: CardDetails, payments: list[CardPaymentRow]) -> str:
+def build_card_print_html(
+    details: CardDetails,
+    payments: list[CardPaymentRow],
+    parking_info: ParkingInfo | None = None,
+) -> str:
     paid_until_text = details.paid_until.strftime("%d.%m.%Y") if details.paid_until else "Нет оплат"
     refund_amount_text = f"{format_amount_kopecks(details.refund_amount_kopecks)} руб."
+
+    park_name = _fmt_text(parking_info.name if parking_info else None)
+    park_addr = _fmt_text(parking_info.address if parking_info else None)
+    park_phone = _fmt_text(parking_info.phone if parking_info else None)
+    park_note = _fmt_text(parking_info.note if parking_info else None)
 
     payments_rows = []
     for p in payments:
@@ -76,6 +86,13 @@ def build_card_print_html(details: CardDetails, payments: list[CardPaymentRow]) 
 </head>
 <body>
   <h1>Карточка автостоянки</h1>
+
+  <div class=\"grid section\">
+    <div class=\"label\">Стоянка:</div><div>{escape(park_name)}</div>
+    <div class=\"label\">Адрес:</div><div>{escape(park_addr)}</div>
+    <div class=\"label\">Телефон:</div><div>{escape(park_phone)}</div>
+    <div class=\"label\">Реквизиты:</div><div>{escape(park_note)}</div>
+  </div>
 
   <div class=\"grid section\">
     <div class=\"label\">Номер карточки:</div><div>{escape(_fmt_text(details.card_number))}</div>
@@ -148,6 +165,7 @@ def export_card_print_html(
     output_dir: Path,
     details: CardDetails,
     payments: list[CardPaymentRow],
+    parking_info: ParkingInfo | None = None,
     now: datetime | None = None,
 ) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -155,5 +173,5 @@ def export_card_print_html(
     safe_card_number = "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in details.card_number)
     filename = f"card_{safe_card_number}_{ts}.html"
     path = ensure_unique_export_path(output_dir / filename)
-    path.write_text(build_card_print_html(details, payments), encoding="utf-8")
+    path.write_text(build_card_print_html(details, payments, parking_info=parking_info), encoding="utf-8")
     return path
