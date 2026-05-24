@@ -22,6 +22,8 @@ from parking_app.ui.card_form import CardFormDialog
 from parking_app.ui.close_card_dialog import CloseCardDialog
 from parking_app.ui.card_details_dialog import CardDetailsDialog
 from parking_app.ui.payment_form import PaymentFormDialog
+from parking_app.services.card_details_service import get_card_details
+from parking_app.services.card_print_service import export_card_print_html
 from parking_app.services.cards_export_service import build_cards_export_rows, cards_export_columns
 from parking_app.services.export_service import export_rows_to_xlsx
 from parking_app.services.cards_table_service import (
@@ -95,9 +97,9 @@ class CardsTab(QWidget):
         self.add_payment_button.clicked.connect(self._open_add_payment_dialog)
         actions_layout.addWidget(self.add_payment_button)
 
-        print_button = QPushButton("Печать карточки", self)
-        print_button.clicked.connect(self._show_placeholder_message)
-        actions_layout.addWidget(print_button)
+        self.print_card_button = QPushButton("Печать карточки", self)
+        self.print_card_button.clicked.connect(self._print_card_html)
+        actions_layout.addWidget(self.print_card_button)
 
         self.close_card_button = QPushButton("Закрыть карточку", self)
         self.close_card_button.clicked.connect(self._open_close_card_dialog)
@@ -246,6 +248,34 @@ class CardsTab(QWidget):
             self.cards_changed.emit()
 
 
+
+    def _print_card_html(self) -> None:
+        row_idx = self.table.currentRow()
+        if row_idx < 0:
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для печати.")
+            return
+        first_item = self.table.item(row_idx, 0)
+        if first_item is None:
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для печати.")
+            return
+        card_id = first_item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(card_id, int):
+            QMessageBox.warning(self, "Ошибка", "Выберите карточку для печати.")
+            return
+
+        try:
+            with SessionLocal() as session:
+                details, payments = get_card_details(session, parking_card_id=card_id, today=date.today())
+            out = export_card_print_html(output_dir=EXPORTS_DIR, details=details, payments=payments)
+            QMessageBox.information(self, "Информация", f"Файл карточки создан: {out}")
+        except ValueError as exc:
+            if str(exc) == "CARD_NOT_FOUND":
+                QMessageBox.warning(self, "Ошибка", "Карточка не найдена. Обновите список карточек.")
+                return
+            QMessageBox.warning(self, "Ошибка", "Не удалось сформировать карточку для печати.")
+        except Exception:
+            QMessageBox.warning(self, "Ошибка", "Не удалось сформировать карточку для печати.")
+
     def _card_status_text(self, status: str) -> str:
         return {"active": "Активная", "closed": "Закрыта", "archived": "Архив"}.get(status, status)
 
@@ -266,5 +296,3 @@ class CardsTab(QWidget):
         except Exception:
             QMessageBox.warning(self, "Ошибка", "Не удалось выполнить экспорт карточек.")
 
-    def _show_placeholder_message(self) -> None:
-        QMessageBox.information(self, "Информация", "Будет добавлено позже")

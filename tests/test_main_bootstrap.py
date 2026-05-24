@@ -163,6 +163,7 @@ class MainWindowSmokeTests(unittest.TestCase):
 
         tab = PlacesTab()
         self.assertTrue(hasattr(tab, "export_button"))
+        self.assertTrue(hasattr(tab, "print_card_button"))
         tab.apply_filters()
         self.assertTrue(hasattr(tab, "_visible_rows"))
 
