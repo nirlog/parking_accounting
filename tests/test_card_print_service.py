@@ -80,6 +80,40 @@ class CardPrintServiceTests(unittest.TestCase):
         self.assertNotIn("<script>", html)
         self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", html)
 
+
+    def test_build_card_print_html_contains_extra_details(self) -> None:
+        html = build_card_print_html(
+            self._details(
+                attendant_name="Петров",
+                card_note="Комментарий карточки",
+                vehicle_note="Комментарий авто",
+                place_status="repair",
+                place_note="Комментарий места",
+            ),
+            [self._payment()],
+        )
+        self.assertIn("Петров", html)
+        self.assertIn("Комментарий карточки", html)
+        self.assertIn("Комментарий авто", html)
+        self.assertIn("Ремонт", html)
+        self.assertIn("Комментарий места", html)
+
+    def test_build_card_print_html_escapes_extra_details(self) -> None:
+        html = build_card_print_html(
+            self._details(
+                card_note="<script>",
+                vehicle_note="<b>auto</b>",
+                place_note="<img src=x>",
+            ),
+            [self._payment()],
+        )
+        self.assertNotIn("<script>", html)
+        self.assertNotIn("<b>auto</b>", html)
+        self.assertNotIn("<img src=x>", html)
+        self.assertIn("&lt;script&gt;", html)
+        self.assertIn("&lt;b&gt;auto&lt;/b&gt;", html)
+        self.assertIn("&lt;img src=x&gt;", html)
+
     def test_export_card_print_html_creates_unique_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             out1 = export_card_print_html(

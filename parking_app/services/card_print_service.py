@@ -26,6 +26,10 @@ def _payment_status_text(status: str) -> str:
     return {"active": "Активная", "cancelled": "Отменена"}.get(status, status)
 
 
+def _place_status_text(status: str) -> str:
+    return {"free": "Свободно", "occupied": "Занято", "reserved": "Бронь", "repair": "Ремонт"}.get(status, status)
+
+
 def build_card_print_html(details: CardDetails, payments: list[CardPaymentRow]) -> str:
     paid_until_text = details.paid_until.strftime("%d.%m.%Y") if details.paid_until else "Нет оплат"
     refund_amount_text = f"{format_amount_kopecks(details.refund_amount_kopecks)} руб."
@@ -45,9 +49,7 @@ def build_card_print_html(details: CardDetails, payments: list[CardPaymentRow]) 
             "</tr>"
         )
 
-    payments_tbody = "\n".join(payments_rows) or (
-        "<tr><td colspan='8'>—</td></tr>"
-    )
+    payments_tbody = "\n".join(payments_rows) or ("<tr><td colspan='8'>—</td></tr>")
 
     return f"""<!DOCTYPE html>
 <html lang=\"ru\">
@@ -63,22 +65,31 @@ def build_card_print_html(details: CardDetails, payments: list[CardPaymentRow]) 
     table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
     th, td {{ border: 1px solid #999; padding: 6px 8px; text-align: left; vertical-align: top; }}
     th {{ background: #f0f0f0; }}
+    .section {{ page-break-inside: avoid; margin-bottom: 8px; }}
+    @media print {{
+      body {{ margin: 12mm; }}
+      .no-print {{ display: none; }}
+      h1 {{ margin-top: 0; }}
+      table, .grid {{ page-break-inside: avoid; }}
+    }}
   </style>
 </head>
 <body>
   <h1>Карточка автостоянки</h1>
 
-  <div class=\"grid\">
+  <div class=\"grid section\">
     <div class=\"label\">Номер карточки:</div><div>{escape(_fmt_text(details.card_number))}</div>
     <div class=\"label\">Бумажный номер:</div><div>{escape(_fmt_text(details.paper_card_number))}</div>
     <div class=\"label\">Статус карточки:</div><div>{escape(_card_status_text(details.card_status))}</div>
     <div class=\"label\">Дата постановки:</div><div>{escape(_fmt_date(details.start_date))}</div>
     <div class=\"label\">Дата закрытия:</div><div>{escape(_fmt_date(details.closed_at))}</div>
     <div class=\"label\">Место:</div><div>{escape(_fmt_text(details.place_number))}</div>
+    <div class=\"label\">Дежурный:</div><div>{escape(_fmt_text(details.attendant_name))}</div>
+    <div class=\"label\">Комментарий карточки:</div><div>{escape(_fmt_text(details.card_note))}</div>
   </div>
 
   <h2>Клиент</h2>
-  <div class=\"grid\">
+  <div class=\"grid section\">
     <div class=\"label\">ФИО:</div><div>{escape(_fmt_text(details.client_fio))}</div>
     <div class=\"label\">Телефон:</div><div>{escape(_fmt_text(details.phone))}</div>
     <div class=\"label\">Документ:</div><div>{escape(_fmt_text(details.document_type))}</div>
@@ -87,14 +98,21 @@ def build_card_print_html(details: CardDetails, payments: list[CardPaymentRow]) 
   </div>
 
   <h2>Автомобиль</h2>
-  <div class=\"grid\">
+  <div class=\"grid section\">
     <div class=\"label\">Марка/модель:</div><div>{escape(_fmt_text(details.vehicle_title))}</div>
     <div class=\"label\">Госномер:</div><div>{escape(_fmt_text(details.state_number))}</div>
     <div class=\"label\">Цвет:</div><div>{escape(_fmt_text(details.color))}</div>
+    <div class=\"label\">Комментарий автомобиля:</div><div>{escape(_fmt_text(details.vehicle_note))}</div>
+  </div>
+
+  <h2>Стоянка</h2>
+  <div class=\"grid section\">
+    <div class=\"label\">Статус места:</div><div>{escape(_place_status_text(_fmt_text(details.place_status)))}</div>
+    <div class=\"label\">Комментарий места:</div><div>{escape(_fmt_text(details.place_note))}</div>
   </div>
 
   <h2>Оплата и возврат</h2>
-  <div class=\"grid\">
+  <div class=\"grid section\">
     <div class=\"label\">Оплачено по:</div><div>{escape(paid_until_text)}</div>
     <div class=\"label\">Статус оплаты:</div><div>{escape(_fmt_text(details.payment_status))}</div>
     <div class=\"label\">Дней возврата:</div><div>{details.refund_days}</div>
